@@ -1,2 +1,4 @@
+INC=-I../eigen
+
 rotst: main.cpp
-	g++ -o rotst main.cpp -I.
+	g++ $(INC) -o rotst main.cpp -I.
