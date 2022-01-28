@@ -2,6 +2,8 @@
 #include <fstream>
 #include <string>
 
+#include <Eigen/Eigenvalues>
+
 #include "rotst.hpp"
 
 void rs_fun(int NSTEPS)
@@ -36,7 +38,7 @@ void rs_fun(int NSTEPS)
 	//solve for 0th state
 	double res = 1.0;
 	int it = 0;
-	std::cout<<"===== Initial convergence Re="<<lam_0<<"====="<<std::endl;
+	std::cout << "===== Initial convergence Re=" << lam_0 << "=====" << std::endl;
 	while (res > 1E-6 && it < 30)
 	{
 
@@ -57,7 +59,9 @@ void rs_fun(int NSTEPS)
 	assembly_set = assembly_vec(J_u, J_lam, u_dot, lam_dot);
 	LHS = assembly_set.first;
 	RHS = assembly_set.second;
-	Eigen::VectorXd dx = LHS.colPivHouseholderQr().solve(RHS);
+//	Eigen::VectorXd dx = LHS.colPivHouseholderQr().solve(RHS);
+	Eigen::VectorXd dx = LHS.partialPivLu().solve(RHS);
+
 
 	u_dot = dx(Eigen::seq(0, Eigen::placeholders::last - 1, 1));
 	lam_dot = dx(Eigen::placeholders::last);
@@ -102,6 +106,8 @@ void rs_fun(int NSTEPS)
 		}
 	}
 }
+
+//double max_real_ev
 
 Eigen::MatrixXd eval_jacobian_u(Eigen::VectorXd u, double lam, double h, std::array<double, 6> bc)
 {
@@ -470,6 +476,63 @@ void lsol_fun()
 	std::cout << sol << std::endl;
 }
 
+void ev_fun()
+{
+	std::cout << "=====Linear solve using eigen=====" << std::endl;
+	int n;
+	std::cout << "Dimension:" << std::endl;
+	std::cin >> n;
+
+	Eigen::MatrixXd A(n, n);
+	Eigen::MatrixXd B(n, n);
+
+	std::cout << "A matrix:" << std::endl;
+	double val;
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+
+			std::cin >> val;
+			A(i, j) = val;
+		}
+	}
+	std::cout << "A matrix:" << std::endl;
+	std::cout << A << std::endl;
+
+	std::cout << "B matrix:" << std::endl;
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+
+			std::cin >> val;
+			B(i, j) = val;
+		}
+	}
+	std::cout << "B matrix:" << std::endl;
+	std::cout << B << std::endl;
+
+	//computation of evs
+	Eigen::GeneralizedEigenSolver<Eigen::MatrixXd> ges;
+	ges.compute(A, B);
+
+	Eigen::VectorXd alpha_real = Eigen::VectorXd(ges.alphas().real());
+	Eigen::VectorXd alpha_imag = Eigen::VectorXd(ges.alphas().imag());
+	Eigen::VectorXd beta = Eigen::VectorXd(ges.betas());
+
+	for (int i = 0; i < n; i++)
+	{
+		std::cout << "Real: " << alpha_real(i) / beta(i) << "	Imag: " << alpha_imag(i) / beta(i) << std::endl;
+	}
+
+	std::cout << "Aplhas:" << std::endl
+			  << ges.alphas() << std::endl;
+
+	std::cout << "Betas:" << std::endl
+			  << ges.betas() << std::endl;
+}
+
 std::vector<double> readInput()
 {
 	std::vector<double> data(10);
@@ -491,7 +554,6 @@ std::vector<double> readInput()
 			data[3] = ii;
 		}
 	}
-
 
 	return data;
 }
