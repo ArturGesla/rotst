@@ -7,7 +7,7 @@ void help_fun();
 void ver_fun();
 void lsol_fun();
 void ev_fun();
-void rs_fun(int NSTEPS);
+void rs_fun(int NSTEPS, int NPOINTS);
 
 std::vector<double> readInput();
 
@@ -16,6 +16,7 @@ int main(int argc, char **argv)
 	std::vector<double> data = readInput();
 
 	int NSTEPS = data[0];
+	int NPOINTS = data[1];
 
 	//	std::cout << "Have " << argc << " arguments:" << std::endl;
 	//	for (int i = 0; i < argc; ++i) {
@@ -39,7 +40,7 @@ int main(int argc, char **argv)
 		if (argv[i] == ev_msg)
 			ev_fun();
 		if (argv[i] == rs_msg)
-			rs_fun(NSTEPS);
+			rs_fun(NSTEPS, NPOINTS);
 	}
 	return 0;
 }

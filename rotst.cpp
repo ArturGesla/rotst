@@ -6,10 +6,11 @@
 
 #include "rotst.hpp"
 
-void rs_fun(int NSTEPS)
+void rs_fun(int NSTEPS, int NPOINTS)
 {
 
-	int n = 99;
+	//int n = 99;
+	int n = NPOINTS;
 	double l = 1.0;
 	double h = l / (n + 1);
 	int fields = 3;
@@ -59,9 +60,8 @@ void rs_fun(int NSTEPS)
 	assembly_set = assembly_vec(J_u, J_lam, u_dot, lam_dot);
 	LHS = assembly_set.first;
 	RHS = assembly_set.second;
-//	Eigen::VectorXd dx = LHS.colPivHouseholderQr().solve(RHS);
+	//	Eigen::VectorXd dx = LHS.colPivHouseholderQr().solve(RHS);
 	Eigen::VectorXd dx = LHS.partialPivLu().solve(RHS);
-
 
 	u_dot = dx(Eigen::seq(0, Eigen::placeholders::last - 1, 1));
 	lam_dot = dx(Eigen::placeholders::last);
@@ -542,12 +542,20 @@ std::vector<double> readInput()
 	char c1, c2;
 	double ii;
 
+	data[0] = 1000;
+	data[1] = 99;
+
 	while (infile >> s >> c1 >> ii >> c2)
 	{
 		//std::cout << s << c1 << ii << c2 << std::endl;
+		
 		if (s == "NSTEPS")
 		{
 			data[0] = ii;
+		}
+		if (s == "NPOINTS")
+		{
+			data[1] = ii;
 		}
 		if (s == "PAR")
 		{
