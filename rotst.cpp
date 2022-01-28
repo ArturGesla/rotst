@@ -431,6 +431,16 @@ std::pair<Eigen::MatrixXd, Eigen::VectorXd> assembly(Eigen::MatrixXd J_u, Eigen:
 void help_fun()
 {
 	std::cout << "This is rotst program." << std::endl;
+
+	std::ifstream infile(".helpFile");
+
+	std::string str;
+
+	while(!infile.eof())
+	{
+		std::getline(infile,str);
+		std::cout<<str<<std::endl;
+	}
 }
 
 void ver_fun()
@@ -478,7 +488,7 @@ void lsol_fun()
 
 void ev_fun()
 {
-	std::cout << "=====Linear solve using eigen=====" << std::endl;
+	std::cout << "=====EV search using eigen=====" << std::endl;
 	int n;
 	std::cout << "Dimension:" << std::endl;
 	std::cin >> n;

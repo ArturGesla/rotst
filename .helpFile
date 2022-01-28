@@ -1,0 +1,11 @@
+
+Functionalities:
+
+rotst
+
+	--version	 for version
+	--help		 for help
+	
+	lsol		 to solve linear system
+	ev		 to find eigenvalues
+	-rs		 to run rotor-stator calculation
