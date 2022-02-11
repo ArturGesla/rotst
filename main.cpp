@@ -8,6 +8,7 @@ void ver_fun();
 void lsol_fun();
 void ev_fun();
 void rs_fun(int NSTEPS, int NPOINTS);
+void test();
 
 std::vector<double> readInput();
 
@@ -28,6 +29,7 @@ int main(int argc, char **argv)
 	std::string lsol_msg = "lsol";
 	std::string ev_msg = "ev";
 	std::string rs_msg = "-rs";
+	std::string test_msg = "-t";
 
 	for (int i = 0; i < argc; i++)
 	{
@@ -41,6 +43,8 @@ int main(int argc, char **argv)
 			ev_fun();
 		if (argv[i] == rs_msg)
 			rs_fun(NSTEPS, NPOINTS);
-	}
+		if (argv[i] == test_msg)
+			test();
+		}
 	return 0;
 }
