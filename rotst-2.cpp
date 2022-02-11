@@ -272,16 +272,16 @@ void rs1D()
 {
     auto start = high_resolution_clock::now();
 
-    int N = 1001; //with bc
+    int N = 801; //with bc
     VectorXd u = VectorXd::Ones(N * 3 + 1);
-    double lam = 100;
+    double lam = 1;
     double h = 1 / double(N - 1);
     std::array<double, 6> bc = {0, 1, 0, 0, 0, 0};
 
-    int max_it = 10;
+    int max_it = 4;
     std::pair<VectorXd, double> sol;
 
-    for (size_t ir = 0; ir < 1; ir++)
+    for (size_t ir = 0; ir < 816; ir++)
     {
         lam += 1000 / 816;
 
@@ -422,7 +422,7 @@ std::pair<VectorXd, double> newtonIteration(VectorXd u, double lam, double h, st
     int NN = u.rows();
 
     SparseMatrix<double> jac(NN, NN);
-    jac.reserve(VectorXd::Constant(NN,6));
+    //jac.reserve(VectorXd::Constant(NN,6));
 
     //left boundary
     rhs(0) = F(0) - bc[0];
