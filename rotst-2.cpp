@@ -272,9 +272,9 @@ void rs1D()
 {
     auto start = high_resolution_clock::now();
 
-    int N = 1001; //with bc
+    int N = 101; //with bc
     VectorXd u = VectorXd::Ones(N * 3 + 1);
-    double lam = 100;
+    double lam = 1;
     double h = 1 / double(N - 1);
     std::array<double, 6> bc = {0, 1, 0, 0, 0, 0};
 
@@ -422,16 +422,23 @@ std::pair<VectorXd, double> newtonIteration(VectorXd u, double lam, double h, st
     int NN = u.rows();
 
     SparseMatrix<double> jac(NN, NN);
-    jac.reserve(VectorXd::Constant(NN,6));
+    //jac.reserve(VectorXd::Constant(NN,6));
+
+    std::vector<Triplet<double>> tripletList;
+    tripletList.reserve(3 + 3 + N * (4) + (N - 1) * (6 + 5));
 
     //left boundary
     rhs(0) = F(0) - bc[0];
     rhs(1) = G(0) - bc[1];
     rhs(2) = H(0) - bc[2];
 
-    jac.insert(0, 0) = 1;
-    jac.insert(1, 1) = 1;
-    jac.insert(2, 2) = 1;
+    //jac.insert(0, 0) = 1;
+    //jac.insert(1, 1) = 1;
+    //jac.insert(2, 2) = 1;
+
+    tripletList.push_back(Triplet<double>(0, 0, 1));
+    tripletList.push_back(Triplet<double>(1, 1, 1));
+    tripletList.push_back(Triplet<double>(2, 2, 1));
 
     //this jacobian calc can be optimised
 
@@ -445,10 +452,15 @@ std::pair<VectorXd, double> newtonIteration(VectorXd u, double lam, double h, st
         int iifp = i * 3 + 3;
         int iih = i * 3 + 2;
         int iihp = i * 3 + 2 + 3;
-        jac.insert(ii, iif) = 1.0;
-        jac.insert(ii, iifp) = 1.0;
-        jac.insert(ii, iih) = -1.0 / h;
-        jac.insert(ii, iihp) = 1.0 / h;
+        //jac.insert(ii, iif) = 1.0;
+        //jac.insert(ii, iifp) = 1.0;
+        //jac.insert(ii, iih) = -1.0 / h;
+        //jac.insert(ii, iihp) = 1.0 / h;
+
+        tripletList.push_back(Triplet<double>(ii, iif, 1));
+        tripletList.push_back(Triplet<double>(ii, iifp, 1));
+        tripletList.push_back(Triplet<double>(ii, iih, -1 / h));
+        tripletList.push_back(Triplet<double>(ii, iihp, 1 / h));
 
         //std::cout<<ii<<std::endl;
     }
@@ -467,12 +479,20 @@ std::pair<VectorXd, double> newtonIteration(VectorXd u, double lam, double h, st
         int iih = i * 3 + 2;
         int iig = i * 3 + 1;
         int iik = NN - 1;
-        jac.insert(ii, iif) = -2.0 / h / h - lam * 2 * F(i);
-        jac.insert(ii, iifp) = 1 / h / h - lam * H(i) / 2.0 / h;
-        jac.insert(ii, iifm) = 1 / h / h + lam * H(i) / 2.0 / h;
-        jac.insert(ii, iih) = -lam * (F(i + 1) - F(i - 1)) / 2.0 / h;
-        jac.insert(ii, iig) = -lam * (-2.0 * G(i));
-        jac.insert(ii, iik) = -lam;
+        //jac.insert(ii, iif) = -2.0 / h / h - lam * 2 * F(i);
+        //jac.insert(ii, iifp) = 1 / h / h - lam * H(i) / 2.0 / h;
+        //jac.insert(ii, iifm) = 1 / h / h + lam * H(i) / 2.0 / h;
+        //jac.insert(ii, iih) = -lam * (F(i + 1) - F(i - 1)) / 2.0 / h;
+        //jac.insert(ii, iig) = -lam * (-2.0 * G(i));
+        //jac.insert(ii, iik) = -lam;
+
+        tripletList.push_back(Triplet<double>(ii, iif, -2.0 / h / h - lam * 2 * F(i)));
+        tripletList.push_back(Triplet<double>(ii, iifp, 1 / h / h - lam * H(i) / 2.0 / h));
+        tripletList.push_back(Triplet<double>(ii, iifm, 1 / h / h + lam * H(i) / 2.0 / h));
+        tripletList.push_back(Triplet<double>(ii, iih, -lam * (F(i + 1) - F(i - 1)) / 2.0 / h));
+        tripletList.push_back(Triplet<double>(ii, iig, -lam * (-2.0 * G(i))));
+        tripletList.push_back(Triplet<double>(ii, iik, -lam));
+
         //std::cout << ii << std::endl;
     }
 
@@ -491,11 +511,18 @@ std::pair<VectorXd, double> newtonIteration(VectorXd u, double lam, double h, st
         int iigm = i * 3 - 3 + 1;
         int iif = i * 3;
         int iih = i * 3 + 2;
-        jac.insert(ii, iig) = -2.0 / h / h - lam * 2 * F(i);
-        jac.insert(ii, iigp) = 1 / h / h - lam * H(i) / 2.0 / h;
-        jac.insert(ii, iigm) = 1 / h / h + lam * H(i) / 2.0 / h;
-        jac.insert(ii, iih) = -lam * (G(i + 1) - G(i - 1)) / 2.0 / h;
-        jac.insert(ii, iif) = -lam * (2.0 * G(i));
+        //jac.insert(ii, iig) = -2.0 / h / h - lam * 2 * F(i);
+        //jac.insert(ii, iigp) = 1 / h / h - lam * H(i) / 2.0 / h;
+        //jac.insert(ii, iigm) = 1 / h / h + lam * H(i) / 2.0 / h;
+        //jac.insert(ii, iih) = -lam * (G(i + 1) - G(i - 1)) / 2.0 / h;
+        //jac.insert(ii, iif) = -lam * (2.0 * G(i));
+
+        tripletList.push_back(Triplet<double>(ii, iig, -2.0 / h / h - lam * 2 * F(i)));
+        tripletList.push_back(Triplet<double>(ii, iigp, 1 / h / h - lam * H(i) / 2.0 / h));
+        tripletList.push_back(Triplet<double>(ii, iigm, 1 / h / h + lam * H(i) / 2.0 / h));
+        tripletList.push_back(Triplet<double>(ii, iih, -lam * (G(i + 1) - G(i - 1)) / 2.0 / h));
+        tripletList.push_back(Triplet<double>(ii, iif, -lam * (2.0 * G(i))));
+
         //std::cout << ii << std::endl;
     }
 
@@ -504,9 +531,15 @@ std::pair<VectorXd, double> newtonIteration(VectorXd u, double lam, double h, st
     rhs(NN - 2) = G(N - 1) - bc[4];
     rhs(NN - 1) = H(N - 1) - bc[5];
 
-    jac.insert(NN - 3, NN - 4) = 1;
-    jac.insert(NN - 2, NN - 3) = 1;
-    jac.insert(NN - 1, NN - 2) = 1;
+    //jac.insert(NN - 3, NN - 4) = 1;
+    //jac.insert(NN - 2, NN - 3) = 1;
+    //jac.insert(NN - 1, NN - 2) = 1;
+
+    tripletList.push_back(Triplet<double>(NN - 3, NN - 4, 1));
+    tripletList.push_back(Triplet<double>(NN - 2, NN - 3, 1));
+    tripletList.push_back(Triplet<double>(NN - 1, NN - 2, 1));
+
+    jac.setFromTriplets(tripletList.begin(), tripletList.end());
 
     //std::cout << jac << std::endl;
 
@@ -515,8 +548,8 @@ std::pair<VectorXd, double> newtonIteration(VectorXd u, double lam, double h, st
 
     auto start2 = high_resolution_clock::now();
 
-    //BiCGSTAB<SparseMatrix<double>,IncompleteLUT<double>> solver; //does not work for zero ig
-    SparseLU<SparseMatrix<double>> solver;
+    BiCGSTAB<SparseMatrix<double>,IncompleteLUT<double>> solver; //does not work for zero ig
+    //SparseLU<SparseMatrix<double>> solver;
     solver.compute(jac);
 
     if (solver.info() != Success)
@@ -536,9 +569,8 @@ std::pair<VectorXd, double> newtonIteration(VectorXd u, double lam, double h, st
     auto stop2 = high_resolution_clock::now();
     auto duration2 = duration_cast<microseconds>(stop2 - start2);
 
-    std::cout << "init:"<<duration.count() << std::endl;
-    std::cout << "solve:"<<duration2.count() << std::endl;
-
+    std::cout << "init:" << duration.count() << std::endl;
+    std::cout << "solve:" << duration2.count() << std::endl;
 
     std::pair<VectorXd, double> out = {du + u, res};
 
