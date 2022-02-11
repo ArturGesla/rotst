@@ -17,6 +17,9 @@ file( GLOB HEADER_FILES inc/*.h* )
 include_directories( ../eigen )
 include_directories( library/inc )
 
+# Enables exporting all symbols to the dll on windows
+set( CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON )
+
 # When compiling with gcc we need to compile libraries with fPIC (stands for
 # position independent code).
 if( CMAKE_COMPILER_IS_GNUCXX )

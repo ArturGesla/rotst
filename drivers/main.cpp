@@ -3,48 +3,42 @@
 #include <tuple>
 #include <vector>
 
-void help_fun();
-void ver_fun();
-void lsol_fun();
-void ev_fun();
-void rs_fun(int NSTEPS, int NPOINTS);
-void test();
+#include "general.hpp"
+#include "rs1D.hpp"
+#include "condiff1D.hpp"
+#include "diff2D.hpp"
 
-std::vector<double> readInput();
-
-int main(int argc, char **argv)
+void test()
 {
-	std::vector<double> data = readInput();
+	rs1D();
+}
 
-	int NSTEPS = data[0];
-	int NPOINTS = data[1];
-
-	//	std::cout << "Have " << argc << " arguments:" << std::endl;
-	//	for (int i = 0; i < argc; ++i) {
-	//        	std::cout << argv[i] << std::endl;
-	//    	}
-
+void execute(std::string msg)
+{
 	std::string help_msg = "--help";
 	std::string ver_msg = "--version";
 	std::string lsol_msg = "lsol";
 	std::string ev_msg = "ev";
-	std::string rs_msg = "-rs";
 	std::string test_msg = "-t";
+
+	if (msg == help_msg)
+		help_fun();
+	if (msg == ver_msg)
+		ver_fun();
+	if (msg == lsol_msg)
+		lsol_fun();
+	if (msg == ev_msg)
+		ev_fun();
+	if (msg == test_msg)
+		test();
+}
+
+int main(int argc, char **argv)
+{
 
 	for (int i = 0; i < argc; i++)
 	{
-		if (argv[i] == help_msg)
-			help_fun();
-		if (argv[i] == ver_msg)
-			ver_fun();
-		if (argv[i] == lsol_msg)
-			lsol_fun();
-		if (argv[i] == ev_msg)
-			ev_fun();
-		if (argv[i] == rs_msg)
-			rs_fun(NSTEPS, NPOINTS);
-		if (argv[i] == test_msg)
-			test();
-		}
+		execute(argv[i]);
+	}
 	return 0;
 }
