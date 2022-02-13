@@ -2,7 +2,7 @@
 #include <Eigen/Dense>
 #include <vector>
 
-void rs1(int NSTEPS=10, int NPOINTS=99);
+void rs_v1(int NSTEPS=10, int NPOINTS=99);
 
 Eigen::MatrixXd eval_jacobian_u(Eigen::VectorXd u, double lam, double h, std::array<double,6> bc);
 Eigen::VectorXd eval_jacobian_lam(Eigen::VectorXd u_0, double lam_0, double h, std::array<double,6> bc);

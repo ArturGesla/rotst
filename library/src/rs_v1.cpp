@@ -4,9 +4,9 @@
 
 #include <Eigen/Eigenvalues>
 
-#include "rs1.hpp"
+#include "rs_v1.hpp"
 
-void rs1(int NSTEPS = 10, int NPOINTS = 99)
+void rs_v1(int NSTEPS , int NPOINTS )
 {
 
     // int n = 99;

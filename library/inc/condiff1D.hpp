@@ -1,7 +1,7 @@
 #include <iostream>
-#include <array>
+#include <fstream>
 
-#include <Eigen\Dense>
-#include <Eigen\Sparse>
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
 
-void writeVTU(double hx, double Nx, double hy, double Ny, VectorXd phi);
+void condiff1D();

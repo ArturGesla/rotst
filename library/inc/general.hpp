@@ -3,7 +3,7 @@
 #include <vector>
 #include <fstream>
 
-#include <Eigen\Dense>
+#include <Eigen/Dense>
 
 void help_fun();
 void ver_fun();

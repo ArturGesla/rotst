@@ -5,12 +5,13 @@
 
 #include "general.hpp"
 #include "rs1D.hpp"
+#include "rs2D.hpp"
 #include "condiff1D.hpp"
 #include "diff2D.hpp"
 
 void test()
 {
-	rs1D();
+	diff2D();
 }
 
 void execute(std::string msg)

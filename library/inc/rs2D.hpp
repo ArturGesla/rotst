@@ -7,6 +7,5 @@
 
 using namespace Eigen;
 
-void diff2D();
-void writeVTU(double hx, double Nx, double hy, double Ny, VectorXd phi);
-
+void rs2D();
+void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd u);

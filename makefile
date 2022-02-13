@@ -1,6 +1,6 @@
 INCL=-I./library/inc/
 INCEXT=-I../eigen/  -I./external/lean_vtk/
-INC=$(INCL) $(INCEXT)
+INC=$(INCEXT) $(INCL)
 
 SRCEXT=./external/lean_vtk/lean_vtk.cpp
 #SRC=./drivers/main.cpp ./library/src/* ./library/src/rotst-2.cpp $(SRCEXT)
