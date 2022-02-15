@@ -7,12 +7,15 @@
 
 using namespace std::chrono;
 
+void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz, double lam, double eps, VectorXd &u);
+
 void rs2D()
 {
-    // there is a problem with r=0, 1/r
+    size_t nx = 100; // with bc without ghost
+    size_t nz = 100; // with bc without ghost
 
-    size_t nx = 30; // with bc without ghost
-    size_t nz = 30; // with bc without ghost
+    //fail lu if nx!=nz bug!!
+    // n=4 fail lu
 
     size_t Neq = 4;
 
@@ -29,6 +32,48 @@ void rs2D()
 
     double eps = hx; //from the axis - has to be fixed
 
+    VectorXd u = VectorXd::Ones(Nx * Nz * Neq);
+
+    for (size_t ilam = 0; ilam < 1; ilam++)
+    {
+        std::cout << "============ Lam = " << 1 + lam * ilam << std::endl;
+        for (size_t i = 0; i < 3; i++)
+        {
+            newtonIterationRS2D(Neq, Nx, Nz, hx, hz, 1 + lam * ilam, eps, u);
+        }
+    }
+
+    // for (size_t i = 0; i < 10; i++)
+    // {
+    //     newtonIterationRS2D(Neq, Nx, Nz, hx, hz, lam, eps, u);
+    // }
+
+    writeVTU_vp(hx, Nx, hz, Nz, u);
+}
+void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz, double lam, double eps, VectorXd &u)
+{
+    // there is a problem with r=0, 1/r
+
+    // size_t nx = 30; // with bc without ghost
+    // size_t nz = 30; // with bc without ghost
+
+    // size_t Neq = 4;
+
+    // size_t Nx = nx + 2;
+    // size_t Nz = nz + 2;
+
+    // double Lx = 10;
+    // double Lz = 1;
+
+    // double hx = Lx / double(nx - 1);
+    // double hz = Lz / double(nz - 1);
+
+    // double lam = 1;
+
+    // double eps = hx; //from the axis - has to be fixed
+
+    // VectorXd u = VectorXd::Ones(Nx * Nz * Neq);
+
     VectorXd rhs = VectorXd::Zero(Nx * Nz * Neq);
     SparseMatrix<double> jac(Nx * Nz * Neq, Nx * Nz * Neq);
 
@@ -36,11 +81,14 @@ void rs2D()
     // VectorXd g = VectorXd::Ones(Nx * Nz);
     // VectorXd h = VectorXd::Ones(Nx * Nz);
     // VectorXd p = VectorXd::Ones(Nx * Nz);
-    VectorXd u = VectorXd::Ones(Nx * Nz * Neq);
     std::vector<Triplet<double>> tripletList;
-    tripletList.reserve((Nx - 1) * (Nz - 1) * (7 + 5 + 7 + 5)); // to do
 
-    // std::cout << "expected size: " << (Nx - 2) * (Nz - 2) * (7 + 5 + 7 + 5) << std::endl;
+    size_t tripletSize = (Nz - 2) * (Nx - 2) * (9 + 7 + 8 + 5) + 16 + 12 * 4 + 5 * 2 * (Nz + Nx - 4 - 4);
+    tripletList.reserve(tripletSize); // to do
+
+    auto start2 = high_resolution_clock::now();
+
+    //std::cout << "expected size: " << tripletSize << std::endl;
     //  test
     //   std::vector<double> v1 = {1.0, 2.0, 3.0};
     //   Eigen::Vector3d v2(v1.data());
@@ -81,27 +129,43 @@ void rs2D()
                 size_t iipzp = iip + Neq;
                 size_t iipzm = iip - Neq;
 
-                double first;
-                double second;
-                double third;
+                //non linear
+                double first = u(iif) * (u(iifxp) - u(iifxm)) / 2.0 / hx;
+                double second = -u(iig) * u(iig) / r;
+                double third = u(iih) * (u(iifzp) - u(iifzm)) / 2.0 / hz;
+
+                //linear
                 double fourth = (u(iipxp) - u(iipxm)) / 2.0 / hx;
                 double fifth = -u(iif) / r / r;
                 double sixth = 1 / r * (u(iifxp) - u(iifxm)) / 2.0 / hx;
                 double seventh = (u(iifxp) - 2 * u(iif) + u(iifxm)) / hx / hx;
                 double eigth = (u(iifzp) - 2 * u(iif) + u(iifzm)) / hz / hz;
 
-                double nlinear;
+                double nlinear = first + second + third;
                 double linear = fourth - 1 / lam * (fifth + sixth + seventh + eigth);
 
-                rhs(ii) = linear;
+                rhs(ii) = nlinear + linear;
 
+                // linear
+                // tripletList.push_back(Triplet<double>(ii, iipxp, 1 / 2.0 / hx));
+                // tripletList.push_back(Triplet<double>(ii, iipxm, -1 / 2.0 / hx));
+                // tripletList.push_back(Triplet<double>(ii, iif, -1 / lam * (-1 / r / r - 2 / hx / hx - 2 / hz / hz)));
+                // tripletList.push_back(Triplet<double>(ii, iifxp, -1 / lam * (1 / r / 2.0 / hx + 1 / hx / hx)));
+                // tripletList.push_back(Triplet<double>(ii, iifxm, -1 / lam * (-1 / r / 2.0 / hx + 1 / hx / hx)));
+                // tripletList.push_back(Triplet<double>(ii, iifzp, -1 / lam * (1 / hz / hz)));
+                // tripletList.push_back(Triplet<double>(ii, iifzm, -1 / lam * (1 / hz / hz)));
+
+                // non linear
                 tripletList.push_back(Triplet<double>(ii, iipxp, 1 / 2.0 / hx));
                 tripletList.push_back(Triplet<double>(ii, iipxm, -1 / 2.0 / hx));
-                tripletList.push_back(Triplet<double>(ii, iif, -1 / lam * (-1 / r / r - 2 / hx / hx - 2 / hz / hz)));
-                tripletList.push_back(Triplet<double>(ii, iifxp, -1 / lam * (1 / r / 2.0 / hx + 1 / hx / hx)));
-                tripletList.push_back(Triplet<double>(ii, iifxm, -1 / lam * (-1 / r / 2.0 / hx + 1 / hx / hx)));
-                tripletList.push_back(Triplet<double>(ii, iifzp, -1 / lam * (1 / hz / hz)));
-                tripletList.push_back(Triplet<double>(ii, iifzm, -1 / lam * (1 / hz / hz)));
+                tripletList.push_back(Triplet<double>(ii, iif, -1 / lam * (-1 / r / r - 2 / hx / hx - 2 / hz / hz) + (u(iifxp) - u(iifxm)) / 2.0 / hx));
+                tripletList.push_back(Triplet<double>(ii, iifxp, -1 / lam * (1 / r / 2.0 / hx + 1 / hx / hx) + u(iif) / 2.0 / hx));
+                tripletList.push_back(Triplet<double>(ii, iifxm, -1 / lam * (-1 / r / 2.0 / hx + 1 / hx / hx) - u(iif) / 2.0 / hx));
+                tripletList.push_back(Triplet<double>(ii, iifzp, -1 / lam * (1 / hz / hz) + u(iih) / 2.0 / hz));
+                tripletList.push_back(Triplet<double>(ii, iifzm, -1 / lam * (1 / hz / hz) - u(iih) / 2.0 / hz));
+
+                tripletList.push_back(Triplet<double>(ii, iig, -2 * u(iig) / r));
+                tripletList.push_back(Triplet<double>(ii, iih, (u(iifzp) - u(iifzm)) / 2.0 / hz));
             }
         }
     }
@@ -141,25 +205,38 @@ void rs2D()
                 size_t iipzp = iip + Neq;
                 size_t iipzm = iip - Neq;
 
-                double first;
-                double second;
-                double third;
+                //non linear
+                double first = u(iif) * (u(iigxp) - u(iigxm)) / 2.0 / hx;
+                double second = u(iig) * u(iif) / r;
+                double third = u(iih) * (u(iigzp) - u(iigzm)) / 2.0 / hz;
+
+                //linear
                 double fourth = 0;
                 double fifth = -u(iig) / r / r;
                 double sixth = 1 / r * (u(iigxp) - u(iigxm)) / 2.0 / hx;
                 double seventh = (u(iigxp) - 2 * u(iig) + u(iigxm)) / hx / hx;
                 double eigth = (u(iigzp) - 2 * u(iig) + u(iigzm)) / hz / hz;
 
-                double nlinear;
+                double nlinear = first + second + third;
                 double linear = fourth - 1 / lam * (fifth + sixth + seventh + eigth);
 
-                rhs(ii) = linear;
+                rhs(ii) = linear + nlinear;
+                // linear
+                // tripletList.push_back(Triplet<double>(ii, iig, -1 / lam * (-1 / r / r - 2 / hx / hx - 2 / hz / hz)));
+                // tripletList.push_back(Triplet<double>(ii, iigxp, -1 / lam * (1 / r / 2.0 / hx + 1 / hx / hx)));
+                // tripletList.push_back(Triplet<double>(ii, iigxm, -1 / lam * (-1 / r / 2.0 / hx + 1 / hx / hx)));
+                // tripletList.push_back(Triplet<double>(ii, iigzp, -1 / lam * (1 / hz / hz)));
+                // tripletList.push_back(Triplet<double>(ii, iigzm, -1 / lam * (1 / hz / hz)));
 
-                tripletList.push_back(Triplet<double>(ii, iig, -1 / lam * (-1 / r / r - 2 / hx / hx - 2 / hz / hz)));
-                tripletList.push_back(Triplet<double>(ii, iigxp, -1 / lam * (1 / r / 2.0 / hx + 1 / hx / hx)));
-                tripletList.push_back(Triplet<double>(ii, iigxm, -1 / lam * (-1 / r / 2.0 / hx + 1 / hx / hx)));
-                tripletList.push_back(Triplet<double>(ii, iigzp, -1 / lam * (1 / hz / hz)));
-                tripletList.push_back(Triplet<double>(ii, iigzm, -1 / lam * (1 / hz / hz)));
+                // non linear
+                tripletList.push_back(Triplet<double>(ii, iig, -1 / lam * (-1 / r / r - 2 / hx / hx - 2 / hz / hz) + u(iif) / r));
+                tripletList.push_back(Triplet<double>(ii, iigxp, -1 / lam * (1 / r / 2.0 / hx + 1 / hx / hx) + u(iif) / 2.0 / hx));
+                tripletList.push_back(Triplet<double>(ii, iigxm, -1 / lam * (-1 / r / 2.0 / hx + 1 / hx / hx) - u(iif) / 2.0 / hx));
+                tripletList.push_back(Triplet<double>(ii, iigzp, -1 / lam * (1 / hz / hz) + u(iih) / 2.0 / hz));
+                tripletList.push_back(Triplet<double>(ii, iigzm, -1 / lam * (1 / hz / hz) - u(iih) / 2.0 / hz));
+
+                tripletList.push_back(Triplet<double>(ii, iif, (u(iigxp) - u(iigxm)) / 2.0 / hx + u(iig) / 2));
+                tripletList.push_back(Triplet<double>(ii, iih, (u(iigzp) - u(iigzm)) / 2.0 / hz));
             }
         }
     }
@@ -199,27 +276,32 @@ void rs2D()
                 size_t iipzp = iip + Neq;
                 size_t iipzm = iip - Neq;
 
-                double first;
-                double second;
-                double third;
+                //non linear
+                double first = u(iif) * (u(iihxp) - u(iihxm)) / 2.0 / hx;
+                double second = 0;
+                double third = u(iih) * (u(iihzp) - u(iihzm)) / 2.0 / hz;
+
+                //linear
                 double fourth = (u(iipzp) - u(iipzm)) / 2.0 / hz;
                 double fifth = 0;
                 double sixth = 1 / r * (u(iihxp) - u(iihxm)) / 2.0 / hx;
                 double seventh = (u(iihxp) - 2 * u(iih) + u(iihxm)) / hx / hx;
                 double eigth = (u(iihzp) - 2 * u(iih) + u(iihzm)) / hz / hz;
 
-                double nlinear;
+                double nlinear = first + second + third;
                 double linear = fourth - 1 / lam * (fifth + sixth + seventh + eigth);
 
-                rhs(ii) = linear;
+                rhs(ii) = linear + nlinear;
 
                 tripletList.push_back(Triplet<double>(ii, iipzp, 1 / 2.0 / hz));
                 tripletList.push_back(Triplet<double>(ii, iipzm, -1 / 2.0 / hz));
-                tripletList.push_back(Triplet<double>(ii, iih, -1 / lam * (-2 / hx / hx - 2 / hz / hz)));
-                tripletList.push_back(Triplet<double>(ii, iihxp, -1 / lam * (1 / r / 2.0 / hx + 1 / hx / hx)));
-                tripletList.push_back(Triplet<double>(ii, iihxm, -1 / lam * (-1 / r / 2.0 / hx + 1 / hx / hx)));
-                tripletList.push_back(Triplet<double>(ii, iihzp, -1 / lam * (1 / hz / hz)));
-                tripletList.push_back(Triplet<double>(ii, iihzm, -1 / lam * (1 / hz / hz)));
+                tripletList.push_back(Triplet<double>(ii, iih, -1 / lam * (-2 / hx / hx - 2 / hz / hz) + (u(iihzp) - u(iihzm)) / 2.0 / hz));
+                tripletList.push_back(Triplet<double>(ii, iihxp, -1 / lam * (1 / r / 2.0 / hx + 1 / hx / hx) + u(iif) / 2.0 / hx));
+                tripletList.push_back(Triplet<double>(ii, iihxm, -1 / lam * (-1 / r / 2.0 / hx + 1 / hx / hx) - u(iif) / 2.0 / hx));
+                tripletList.push_back(Triplet<double>(ii, iihzp, -1 / lam * (1 / hz / hz) + u(iih) / 2.0 / hz));
+                tripletList.push_back(Triplet<double>(ii, iihzm, -1 / lam * (1 / hz / hz) - u(iih) / 2.0 / hz));
+
+                tripletList.push_back(Triplet<double>(ii, iif, (u(iihxp) - u(iihxm)) / 2.0 / hx));
             }
         }
     }
@@ -778,9 +860,16 @@ void rs2D()
 
     // std::cout << rhs << std::endl;
     // std::cout << jac << std::endl;
-    // std::cout << "rl size: " << tripletList.size() << std::endl;
+    //std::cout << "rl size: " << tripletList.size() << std::endl;
+    auto stop2 = high_resolution_clock::now();
+    auto duration2 = duration_cast<microseconds>(stop2 - start2);
+    std::cout << "init:" << duration2.count() << std::endl;
+
+    auto start = high_resolution_clock::now();
 
     SparseLU<SparseMatrix<double>> solver;
+    //BiCGSTAB<SparseMatrix<double>, IncompleteLUT<double>> solver; //does not work for zero ig
+
     solver.compute(jac);
 
     if (solver.info() != Success)
@@ -795,11 +884,14 @@ void rs2D()
         throw std::invalid_argument("Solve failed.");
     }
 
-    u = u + du;
-    double res = (jac * du + rhs).norm();
-    std::cout << "Res is:" << res << std::endl;
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    std::cout << "solve:" << duration.count() << std::endl;
 
-    writeVTU_vp(hx, Nx, hz, Nz, u);
+    u = u + du;
+    //double res = (jac * du + rhs).norm();
+    double res = (du).norm();
+    std::cout << "(?) czy to nie powinno byc 0 od razu (?) Res is:" << res << std::endl;
 }
 
 void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd data)
@@ -870,7 +962,7 @@ void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd data)
     writer.add_scalar_field("w", w);
     writer.add_scalar_field("p", p);
 
-    writer.add_vector_field("vel",vel,dim);
+    writer.add_vector_field("vel", vel, dim);
 
     // writer.add_vector_field("vector_field", vector_field, dim);
 
