@@ -11,21 +11,23 @@ void rs2D()
 {
     // there is a problem with r=0, 1/r
 
-    size_t nx = 3; // with bc without ghost
-    size_t nz = 3; // with bc without ghost
+    size_t nx = 30; // with bc without ghost
+    size_t nz = 30; // with bc without ghost
 
     size_t Neq = 4;
 
     size_t Nx = nx + 2;
     size_t Nz = nz + 2;
 
-    double Lx = 1;
+    double Lx = 10;
     double Lz = 1;
 
     double hx = Lx / double(nx - 1);
     double hz = Lz / double(nz - 1);
 
     double lam = 1;
+
+    double eps = hx; //from the axis - has to be fixed
 
     VectorXd rhs = VectorXd::Zero(Nx * Nz * Neq);
     SparseMatrix<double> jac(Nx * Nz * Neq, Nx * Nz * Neq);
@@ -51,7 +53,7 @@ void rs2D()
         {
             for (size_t iz = 1; iz < Nz - 1; iz++)
             {
-                double r = ix * hx;
+                double r = (ix - 1) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -111,7 +113,7 @@ void rs2D()
         {
             for (size_t iz = 1; iz < Nz - 1; iz++)
             {
-                double r = ix * hx;
+                double r = (ix - 1) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -169,7 +171,7 @@ void rs2D()
         {
             for (size_t iz = 1; iz < Nz - 1; iz++)
             {
-                double r = ix * hx;
+                double r = (ix - 1) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -229,7 +231,7 @@ void rs2D()
         {
             for (size_t iz = 1; iz < Nz - 1; iz++)
             {
-                double r = ix * hx;
+                double r = (ix - 1) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -321,369 +323,263 @@ void rs2D()
         }
     }
 
+    //Corners BC
     {
-        //corner treatment
-        std::array<size_t, 4> pts = {Nz + 1,
-                                     Nz + Nz - 2,
-                                     -Nz + Nx * Nz - Nz + 1,
-                                     -Nz + Nx * Nz - 1 - 1};
-
-        // {
-        //     size_t ia = 0; //left top
-
-        //     size_t ii = pts[ia] * Neq;
-
-        //     size_t iif = ii;
-        //     size_t iifxp = iif + Nz * Neq;
-        //     size_t iifxm = iif - Nz * Neq;
-        //     size_t iifzp = iif + Neq;
-        //     size_t iifzm = iif - Neq;
-
-        //     size_t iig = iif + 1;
-        //     size_t iigxp = iig + Nz * Neq;
-        //     size_t iigxm = iig - Nz * Neq;
-        //     size_t iigzp = iig + Neq;
-        //     size_t iigzm = iig - Neq;
-
-        //     size_t iih = iig + 1;
-        //     size_t iihxp = iih + Nz * Neq;
-        //     size_t iihxm = iih - Nz * Neq;
-        //     size_t iihzp = iih + Neq;
-        //     size_t iihzm = iih - Neq;
-
-        //     size_t iip = iih + 1;
-        //     size_t iipxp = iip + Nz * Neq;
-        //     size_t iipxm = iip - Nz * Neq;
-        //     size_t iipzp = iip + Neq;
-        //     size_t iipzm = iip - Neq;
-
-        //     rhs(iifxm) = (u(iifxp) - u(iifxm)) / 2.0 / hx;
-        //     rhs(iifzm) = (u(iifzp) - u(iifzm)) / 2.0 / hz;
-
-        //     //tripletList.push_back(Triplet<double>(iifxm, iifxp, 1 / 2.0 / hx));
-        //     //tripletList.push_back(Triplet<double>(iifxm, iifxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iifzm, iifzp, 1 / 2.0 / hz));
-        //     //tripletList.push_back(Triplet<double>(iifzm, iifzm, -1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iifzm, iif, 1));
-
-        //     rhs(iigxm) = (u(iigxp) - u(iigxm)) / 2.0 / hx;
-        //     rhs(iigzm) = (u(iigzp) - u(iigzm)) / 2.0 / hz;
-
-        //     //tripletList.push_back(Triplet<double>(iigxm, iigxp, 1 / 2.0 / hx));
-        //     //tripletList.push_back(Triplet<double>(iigxm, iigxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iigzm, iigzp, 1 / 2.0 / hz));
-        //     //tripletList.push_back(Triplet<double>(iigzm, iigzm, -1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iigzm, iig, 1));
-
-        //     rhs(iihxm) = (u(iihxp) - u(iihxm)) / 2.0 / hx;
-        //     rhs(iihzm) = (u(iihzp) - u(iihzm)) / 2.0 / hz;
-
-        //     //tripletList.push_back(Triplet<double>(iihxm, iihxp, 1 / 2.0 / hx));
-        //     //tripletList.push_back(Triplet<double>(iihxm, iihxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iihzm, iihzp, 1 / 2.0 / hz));
-        //     //tripletList.push_back(Triplet<double>(iihzm, iihzm, -1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iihzm, iih, 1));
-
-        //     //rhs(iipxm) = (u(iipxp) - u(iipxm)) / 2.0 / hx;
-        //     //rhs(iipzm) = (u(iipzp) - u(iipzm)) / 2.0 / hz;
-
-        //     //tripletList.push_back(Triplet<double>(iipxm, iipxp, 1 / 2.0 / hx));
-        //     //tripletList.push_back(Triplet<double>(iipxm, iipxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iipzm, iipzp, 1 / 2.0 / hz));
-        //     //tripletList.push_back(Triplet<double>(iipzm, iip, 1));
-        // }
-
-        // {
-        //     size_t ia = 1; //left bottom
-
-        //     size_t ii = pts[ia] * Neq;
-
-        //     size_t iif = ii;
-        //     size_t iifxp = iif + Nz * Neq;
-        //     size_t iifxm = iif - Nz * Neq;
-        //     size_t iifzp = iif + Neq;
-        //     size_t iifzm = iif - Neq;
-
-        //     size_t iig = iif + 1;
-        //     size_t iigxp = iig + Nz * Neq;
-        //     size_t iigxm = iig - Nz * Neq;
-        //     size_t iigzp = iig + Neq;
-        //     size_t iigzm = iig - Neq;
-
-        //     size_t iih = iig + 1;
-        //     size_t iihxp = iih + Nz * Neq;
-        //     size_t iihxm = iih - Nz * Neq;
-        //     size_t iihzp = iih + Neq;
-        //     size_t iihzm = iih - Neq;
-
-        //     size_t iip = iih + 1;
-        //     size_t iipxp = iip + Nz * Neq;
-        //     size_t iipxm = iip - Nz * Neq;
-        //     size_t iipzp = iip + Neq;
-        //     size_t iipzm = iip - Neq;
-
-        //     rhs(iifxm) = (u(iifxp) - u(iifxm)) / 2.0 / hx;
-        //     rhs(iifzm) = (u(iifzp) - u(iifzm)) / 2.0 / hz;
-
-        //     // tripletList.push_back(Triplet<double>(iifxm, iifxp, 1 / 2.0 / hx));
-        //     // tripletList.push_back(Triplet<double>(iifxm, iifxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iifzp, iifzp, 1 / 2.0 / hz));
-        //     //tripletList.push_back(Triplet<double>(iifzp, iifzm, -1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iifzp, iif, 1));
-
-        //     rhs(iigxm) = (u(iigxp) - u(iigxm)) / 2.0 / hx;
-        //     rhs(iigzm) = (u(iigzp) - u(iigzm)) / 2.0 / hz;
-
-        //     // tripletList.push_back(Triplet<double>(iigxm, iigxp, 1 / 2.0 / hx));
-        //     // tripletList.push_back(Triplet<double>(iigxm, iigxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iigzp, iigzp, 1 / 2.0 / hz));
-        //     //tripletList.push_back(Triplet<double>(iigzp, iigzm, -1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iigzp, iig, 1));
-
-        //     rhs(iihxm) = (u(iihxp) - u(iihxm)) / 2.0 / hx;
-        //     rhs(iihzm) = (u(iihzp) - u(iihzm)) / 2.0 / hz;
-
-        //     // tripletList.push_back(Triplet<double>(iihxm, iihxp, 1 / 2.0 / hx));
-        //     // tripletList.push_back(Triplet<double>(iihxm, iihxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iihzp, iihzp, 1 / 2.0 / hz));
-        //     //tripletList.push_back(Triplet<double>(iihzp, iihzm, -1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iihzp, iih, 1));
-
-        //     //rhs(iipxm) = (u(iipxp) - u(iipxm)) / 2.0 / hx;
-        //     //rhs(iipzm) = (u(iipzp) - u(iipzm)) / 2.0 / hz;
-
-        //     //tripletList.push_back(Triplet<double>(iipxm, iipxp, 1 / 2.0 / hx));
-        //     //tripletList.push_back(Triplet<double>(iipxm, iipxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iipzm, iipzp, 1 / 2.0 / hz));
-        //     //tripletList.push_back(Triplet<double>(iipzm, iip, 1));
-        // }
-
-        // {
-        //     size_t ia = 2; //right top
-
-        //     size_t ii = pts[ia] * Neq;
-
-        //     size_t iif = ii;
-        //     size_t iifxp = iif + Nz * Neq;
-        //     size_t iifxm = iif - Nz * Neq;
-        //     size_t iifzp = iif + Neq;
-        //     size_t iifzm = iif - Neq;
-
-        //     size_t iig = iif + 1;
-        //     size_t iigxp = iig + Nz * Neq;
-        //     size_t iigxm = iig - Nz * Neq;
-        //     size_t iigzp = iig + Neq;
-        //     size_t iigzm = iig - Neq;
-
-        //     size_t iih = iig + 1;
-        //     size_t iihxp = iih + Nz * Neq;
-        //     size_t iihxm = iih - Nz * Neq;
-        //     size_t iihzp = iih + Neq;
-        //     size_t iihzm = iih - Neq;
-
-        //     size_t iip = iih + 1;
-        //     size_t iipxp = iip + Nz * Neq;
-        //     size_t iipxm = iip - Nz * Neq;
-        //     size_t iipzp = iip + Neq;
-        //     size_t iipzm = iip - Neq;
-
-        //     rhs(iifxm) = (u(iifxp) - u(iifxm)) / 2.0 / hx;
-        //     rhs(iifzm) = (u(iifzp) - u(iifzm)) / 2.0 / hz;
-
-        //     tripletList.push_back(Triplet<double>(iifxp, iifxp, 1 / 2.0 / hx));
-        //     tripletList.push_back(Triplet<double>(iifxp, iifxm, -1 / 2.0 / hx));
-
-        //     tripletList.push_back(Triplet<double>(iifzm, iifzp, 1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iifzm, iifzm, -1 / 2.0 / hz));
-
-        //     rhs(iigxm) = (u(iigxp) - u(iigxm)) / 2.0 / hx;
-        //     rhs(iigzm) = (u(iigzp) - u(iigzm)) / 2.0 / hz;
-
-        //     tripletList.push_back(Triplet<double>(iigxp, iigxp, 1 / 2.0 / hx));
-        //     tripletList.push_back(Triplet<double>(iigxp, iigxm, -1 / 2.0 / hx));
-
-        //     tripletList.push_back(Triplet<double>(iigzm, iigzp, 1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iigzm, iigzm, -1 / 2.0 / hz));
-
-        //     rhs(iihxm) = (u(iihxp) - u(iihxm)) / 2.0 / hx;
-        //     rhs(iihzm) = (u(iihzp) - u(iihzm)) / 2.0 / hz;
-
-        //     tripletList.push_back(Triplet<double>(iihxp, iihxp, 1 / 2.0 / hx));
-        //     tripletList.push_back(Triplet<double>(iihxp, iihxm, -1 / 2.0 / hx));
-
-        //     tripletList.push_back(Triplet<double>(iihzm, iihzp, 1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iihzm, iihzm, -1 / 2.0 / hz));
-
-        //     rhs(iipxm) = (u(iipxp) - u(iipxm)) / 2.0 / hx;
-        //     //rhs(iipzm) = (u(iipzp) - u(iipzm)) / 2.0 / hz;
-
-        //     //tripletList.push_back(Triplet<double>(iipxm, iipxp, 1 / 2.0 / hx));
-        //     //tripletList.push_back(Triplet<double>(iipxm, iipxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iipzm, iipzp, 1 / 2.0 / hz));
-        //     //tripletList.push_back(Triplet<double>(iipzm, iip, 1));
-        // }
-
-        // {
-        //     size_t ia = 3; //right bottom
-
-        //     size_t ii = pts[ia] * Neq;
-
-        //     size_t iif = ii;
-        //     size_t iifxp = iif + Nz * Neq;
-        //     size_t iifxm = iif - Nz * Neq;
-        //     size_t iifzp = iif + Neq;
-        //     size_t iifzm = iif - Neq;
-
-        //     size_t iig = iif + 1;
-        //     size_t iigxp = iig + Nz * Neq;
-        //     size_t iigxm = iig - Nz * Neq;
-        //     size_t iigzp = iig + Neq;
-        //     size_t iigzm = iig - Neq;
-
-        //     size_t iih = iig + 1;
-        //     size_t iihxp = iih + Nz * Neq;
-        //     size_t iihxm = iih - Nz * Neq;
-        //     size_t iihzp = iih + Neq;
-        //     size_t iihzm = iih - Neq;
-
-        //     size_t iip = iih + 1;
-        //     size_t iipxp = iip + Nz * Neq;
-        //     size_t iipxm = iip - Nz * Neq;
-        //     size_t iipzp = iip + Neq;
-        //     size_t iipzm = iip - Neq;
-
-        //     rhs(iifxm) = (u(iifxp) - u(iifxm)) / 2.0 / hx;
-        //     rhs(iifzm) = (u(iifzp) - u(iifzm)) / 2.0 / hz;
-
-        //     tripletList.push_back(Triplet<double>(iifxp, iifxp, 1 / 2.0 / hx));
-        //     tripletList.push_back(Triplet<double>(iifxp, iifxm, -1 / 2.0 / hx));
-
-        //     tripletList.push_back(Triplet<double>(iifzp, iifzp, 1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iifzp, iifzm, -1 / 2.0 / hz));
-
-        //     rhs(iigxm) = (u(iigxp) - u(iigxm)) / 2.0 / hx;
-        //     rhs(iigzm) = (u(iigzp) - u(iigzm)) / 2.0 / hz;
-
-        //     tripletList.push_back(Triplet<double>(iigxp, iigxp, 1 / 2.0 / hx));
-        //     tripletList.push_back(Triplet<double>(iigxp, iigxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iigzp, iigzp, 1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iigzp, iig, 1));
-
-        //     rhs(iihxm) = (u(iihxp) - u(iihxm)) / 2.0 / hx;
-        //     rhs(iihzm) = (u(iihzp) - u(iihzm)) / 2.0 / hz;
-
-        //     tripletList.push_back(Triplet<double>(iihxp, iihxp, 1 / 2.0 / hx));
-        //     tripletList.push_back(Triplet<double>(iihxp, iihxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iihzp, iihzp, 1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(iihzp, iih, 1));
-
-        //     //rhs(iipxm) = (u(iipxp) - u(iipxm)) / 2.0 / hx;
-        //     //rhs(iipzm) = (u(iipzp) - u(iipzm)) / 2.0 / hz;
-
-        //     //tripletList.push_back(Triplet<double>(iipxm, iipxp, 1 / 2.0 / hx));
-        //     //tripletList.push_back(Triplet<double>(iipxm, iipxm, -1 / 2.0 / hx));
-
-        //     //tripletList.push_back(Triplet<double>(iipzm, iipzp, 1 / 2.0 / hz));
-        //     //tripletList.push_back(Triplet<double>(iipzm, iip, 1));
-        // }
+        //left top corner
+        size_t ix = 1;
+        size_t iz = 1;
+
+        size_t ii = (iz + ix * Nz) * Neq;
+
+        size_t iif = ii;
+        size_t iifxp = iif + Nz * Neq;
+        size_t iifxm = iif - Nz * Neq;
+        size_t iifzp = iif + Neq;
+        size_t iifzm = iif - Neq;
+
+        size_t iig = iif + 1;
+        size_t iigxp = iig + Nz * Neq;
+        size_t iigxm = iig - Nz * Neq;
+        size_t iigzp = iig + Neq;
+        size_t iigzm = iig - Neq;
+
+        size_t iih = iig + 1;
+        size_t iihxp = iih + Nz * Neq;
+        size_t iihxm = iih - Nz * Neq;
+        size_t iihzp = iih + Neq;
+        size_t iihzm = iih - Neq;
+
+        size_t iip = iih + 1;
+        size_t iipxp = iip + Nz * Neq;
+        size_t iipxm = iip - Nz * Neq;
+        size_t iipzp = iip + Neq;
+        size_t iipzm = iip - Neq;
+
+        rhs(iifxm) = u(iif) - fLeft;
+        rhs(iigxm) = u(iig) - gLeft;
+        rhs(iihxm) = u(iih) - hLeft;
+        rhs(iipxm) = (u(iipxp) - u(iipxm)) / 2.0 / hx - dpLeft;
+
+        rhs(iifzm) = (u(iipzp) - u(iipzm)) / 2.0 / hz - dpTop;
+        rhs(iigzm) = (u(iifxp) - u(iifxm)) / 2.0 / hx;
+        rhs(iihzm) = (u(iigxp) - u(iigxm)) / 2.0 / hx;
+        rhs(iipzm) = u(iip) - pRef;
+
+        //left
+        tripletList.push_back(Triplet<double>(iifxm, iif, 1));
+        tripletList.push_back(Triplet<double>(iigxm, iig, 1));
+        tripletList.push_back(Triplet<double>(iihxm, iih, 1));
+
+        tripletList.push_back(Triplet<double>(iipxm, iipxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iipxm, iipxm, -1 / 2.0 / hx));
+
+        //top
+        tripletList.push_back(Triplet<double>(iifzm, iipzp, 1 / 2.0 / hz));
+        tripletList.push_back(Triplet<double>(iifzm, iipzm, -1 / 2.0 / hz));
+
+        tripletList.push_back(Triplet<double>(iigzm, iifxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iigzm, iifxm, -1 / 2.0 / hx));
+
+        tripletList.push_back(Triplet<double>(iihzm, iigxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iihzm, iigxm, -1 / 2.0 / hx));
+
+        tripletList.push_back(Triplet<double>(iipzm, iip, 1));
     }
 
     {
-        // additional points in corners only for Dirichlet BC for vel - 12 jacobian entries
-        // std::array<int, 4> pts = {Nz + 0,
-        //                           Nz + Nz - 1,
-        //                           -Nz + Nx * Nz - Nz,
-        //                           -Nz + Nx * Nz - 1};
+        //left bottom corner
+        size_t ix = 1;
+        size_t iz = Nz - 2;
 
-        // velocity
-        // for (size_t ieq = 0; ieq < Neq - 1; ieq++)
-        // {
-        //     for (size_t i = 0; i < pts.max_size(); i++)
-        //     {
-        //         size_t j = pts[i] * Neq + ieq;
-        //         rhs(j) = u(j) - cval;
-        //         tripletList.push_back(Triplet<double>(j, j, 1));
-        //     }
-        // }
+        size_t ii = (iz + ix * Nz) * Neq;
 
-        // pressure
-        // size_t ieq = 3;
-        // {
-        //     // add point 0
-        //     size_t i = 0;
-        //     size_t j = pts[i] * Neq + ieq;
-        //     rhs(j) = (u(j + 2 * Neq) - u(j)) / 2.0 / hz - dpTop;
-        //     tripletList.push_back(Triplet<double>(j, j + 2 * Neq, 1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(j, j, -1 / 2.0 / hz));
-        // }
-        // {
-        //     // add point 1
-        //     size_t i = 1;
-        //     size_t j = pts[i] * Neq + ieq;
-        //     rhs(j) = (u(j) - u(j - 2 * Neq)) / 2.0 / hz - dpBottom;
-        //     tripletList.push_back(Triplet<double>(j, j - 2 * Neq, -1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(j, j, 1 / 2.0 / hz));
-        // }
-        // {
-        //     // add point 2
-        //     size_t i = 2;
-        //     size_t j = pts[i] * Neq + ieq;
-        //     rhs(j) = (u(j + 2 * Neq) - u(j)) / 2.0 / hz - dpTop;
-        //     tripletList.push_back(Triplet<double>(j, j + 2 * Neq, 1 / 2.0 / hz));
-        //     tripletList.push_back(Triplet<double>(j, j, -1 / 2.0 / hz));
-        // }
-        // {
-        //     // add point 3
-        //     size_t i = 3;
-        //     size_t j = pts[i] * Neq + ieq;
-        //     rhs(j) = u(j) - pRef;
-        //     tripletList.push_back(Triplet<double>(j, j, 1));
-        // }
+        size_t iif = ii;
+        size_t iifxp = iif + Nz * Neq;
+        size_t iifxm = iif - Nz * Neq;
+        size_t iifzp = iif + Neq;
+        size_t iifzm = iif - Neq;
 
-        // podejscie 2 - 4 wartosci cisnienia 1 2 3 4
-        // size_t ieq = 3;
-        // {
-        //     // add point 0
-        //     size_t i = 0;
-        //     size_t j = pts[i] * Neq + ieq;
-        //     rhs(j) = u(j) - 1;
-        //     tripletList.push_back(Triplet<double>(j, j, 1));
-        // }
-        // {
-        //     // add point 1
-        //     size_t i = 1;
-        //     size_t j = pts[i] * Neq + ieq;
-        //     rhs(j) = u((Nz + 1) * Neq + ieq) - 2;
-        //     tripletList.push_back(Triplet<double>(j, (Nz + 1) * Neq + ieq, 1));
-        // }
-        // {
-        //     // add point 2
-        //     size_t i = 2;
-        //     size_t j = pts[i] * Neq + ieq;
-        //     rhs(j) = u((Nz + Nz) * Neq + ieq) - 3;
-        //     tripletList.push_back(Triplet<double>(j, (Nz + Nz) * Neq + ieq, 1));
-        // }
-        // {
-        //     // add point 3
-        //     size_t i = 3;
-        //     size_t j = pts[i] * Neq + ieq;
-        //     rhs(j) = u((Nz + Nz + 1) * Neq + ieq) - 4;
-        //     tripletList.push_back(Triplet<double>(j, (Nz + Nz + 1) * Neq + ieq, 1));
-        // }
+        size_t iig = iif + 1;
+        size_t iigxp = iig + Nz * Neq;
+        size_t iigxm = iig - Nz * Neq;
+        size_t iigzp = iig + Neq;
+        size_t iigzm = iig - Neq;
+
+        size_t iih = iig + 1;
+        size_t iihxp = iih + Nz * Neq;
+        size_t iihxm = iih - Nz * Neq;
+        size_t iihzp = iih + Neq;
+        size_t iihzm = iih - Neq;
+
+        size_t iip = iih + 1;
+        size_t iipxp = iip + Nz * Neq;
+        size_t iipxm = iip - Nz * Neq;
+        size_t iipzp = iip + Neq;
+        size_t iipzm = iip - Neq;
+
+        size_t ip21 = (2 + Nz) * Neq + 3;
+
+        rhs(iifxm) = u(ip21) - pRef;
+        rhs(iigxm) = u(iig) - gLeft;
+        rhs(iihxm) = u(iih) - hLeft;
+        rhs(iipxm) = (u(iipxp) - u(iipxm)) / 2.0 / hx - dpLeft;
+
+        rhs(iifzp) = (u(iipzp) - u(iipzm)) / 2.0 / hz - dpBottom;
+        rhs(iigzp) = (u(iifxp) - u(iifxm)) / 2.0 / hx;
+        rhs(iihzp) = (u(iigxp) - u(iigxm)) / 2.0 / hx;
+        rhs(iipzp) = u(iip) - pRef;
+
+        //left
+        tripletList.push_back(Triplet<double>(iifxm, ip21, 1));
+        tripletList.push_back(Triplet<double>(iigxm, iig, 1));
+        tripletList.push_back(Triplet<double>(iihxm, iih, 1));
+
+        tripletList.push_back(Triplet<double>(iipxm, iipxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iipxm, iipxm, -1 / 2.0 / hx));
+
+        //bottom
+        tripletList.push_back(Triplet<double>(iifzp, iipzp, 1 / 2.0 / hz));
+        tripletList.push_back(Triplet<double>(iifzp, iipzm, -1 / 2.0 / hz));
+
+        tripletList.push_back(Triplet<double>(iigzp, iifxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iigzp, iifxm, -1 / 2.0 / hx));
+
+        tripletList.push_back(Triplet<double>(iihzp, iigxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iihzp, iigxm, -1 / 2.0 / hx));
+
+        tripletList.push_back(Triplet<double>(iipzp, iip, 1));
     }
 
     {
+        //right top corner
+        size_t ix = Nx - 2;
+        size_t iz = 1;
+
+        size_t ii = (iz + ix * Nz) * Neq;
+
+        size_t iif = ii;
+        size_t iifxp = iif + Nz * Neq;
+        size_t iifxm = iif - Nz * Neq;
+        size_t iifzp = iif + Neq;
+        size_t iifzm = iif - Neq;
+
+        size_t iig = iif + 1;
+        size_t iigxp = iig + Nz * Neq;
+        size_t iigxm = iig - Nz * Neq;
+        size_t iigzp = iig + Neq;
+        size_t iigzm = iig - Neq;
+
+        size_t iih = iig + 1;
+        size_t iihxp = iih + Nz * Neq;
+        size_t iihxm = iih - Nz * Neq;
+        size_t iihzp = iih + Neq;
+        size_t iihzm = iih - Neq;
+
+        size_t iip = iih + 1;
+        size_t iipxp = iip + Nz * Neq;
+        size_t iipxm = iip - Nz * Neq;
+        size_t iipzp = iip + Neq;
+        size_t iipzm = iip - Neq;
+
+        size_t ip12 = (1 + Nz + Nz) * Neq + 3;
+
+        rhs(iifxp) = u(iif) - fRight;
+        rhs(iigxp) = u(iig) - gRight;
+        rhs(iihxp) = u(ip12) - pRef;
+        rhs(iipxp) = (u(iipxp) - u(iipxm)) / 2.0 / hx - dpRight;
+
+        rhs(iifzm) = (u(iipzp) - u(iipzm)) / 2.0 / hz - dpTop;
+        rhs(iigzm) = (u(iifxp) - u(iifxm)) / 2.0 / hx;
+        rhs(iihzm) = (u(iigxp) - u(iigxm)) / 2.0 / hx;
+        rhs(iipzm) = u(iip) - pRef;
+
+        //right
+        tripletList.push_back(Triplet<double>(iifxp, iif, 1));
+        tripletList.push_back(Triplet<double>(iigxp, iig, 1));
+        tripletList.push_back(Triplet<double>(iihxp, ip12, 1));
+
+        tripletList.push_back(Triplet<double>(iipxp, iipxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iipxp, iipxm, -1 / 2.0 / hx));
+
+        //top
+        tripletList.push_back(Triplet<double>(iifzm, iipzp, 1 / 2.0 / hz));
+        tripletList.push_back(Triplet<double>(iifzm, iipzm, -1 / 2.0 / hz));
+
+        tripletList.push_back(Triplet<double>(iigzm, iifxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iigzm, iifxm, -1 / 2.0 / hx));
+
+        tripletList.push_back(Triplet<double>(iihzm, iigxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iihzm, iigxm, -1 / 2.0 / hx));
+
+        tripletList.push_back(Triplet<double>(iipzm, iip, 1));
+    }
+
+    {
+        //right bottom corner
+        size_t ix = Nx - 2;
+        size_t iz = Nz - 2;
+
+        size_t ii = (iz + ix * Nz) * Neq;
+
+        size_t iif = ii;
+        size_t iifxp = iif + Nz * Neq;
+        size_t iifxm = iif - Nz * Neq;
+        size_t iifzp = iif + Neq;
+        size_t iifzm = iif - Neq;
+
+        size_t iig = iif + 1;
+        size_t iigxp = iig + Nz * Neq;
+        size_t iigxm = iig - Nz * Neq;
+        size_t iigzp = iig + Neq;
+        size_t iigzm = iig - Neq;
+
+        size_t iih = iig + 1;
+        size_t iihxp = iih + Nz * Neq;
+        size_t iihxm = iih - Nz * Neq;
+        size_t iihzp = iih + Neq;
+        size_t iihzm = iih - Neq;
+
+        size_t iip = iih + 1;
+        size_t iipxp = iip + Nz * Neq;
+        size_t iipxm = iip - Nz * Neq;
+        size_t iipzp = iip + Neq;
+        size_t iipzm = iip - Neq;
+
+        size_t ip22 = (1 + Nz + Nz + 1) * Neq + 3;
+
+        rhs(iifxp) = u(ip22) - pRef;
+        rhs(iigxp) = u(iig) - gRight;
+        rhs(iihxp) = u(iih) - hRight;
+        rhs(iipxp) = (u(iipxp) - u(iipxm)) / 2.0 / hx - dpRight;
+
+        rhs(iifzp) = (u(iipzp) - u(iipzm)) / 2.0 / hz - dpBottom;
+        rhs(iigzp) = (u(iifxp) - u(iifxm)) / 2.0 / hx;
+        rhs(iihzp) = (u(iigxp) - u(iigxm)) / 2.0 / hx;
+        rhs(iipzp) = u(iip) - pRef;
+
+        //right
+        tripletList.push_back(Triplet<double>(iifxp, ip22, 1));
+        tripletList.push_back(Triplet<double>(iigxp, iig, 1));
+        tripletList.push_back(Triplet<double>(iihxp, iih, 1));
+
+        tripletList.push_back(Triplet<double>(iipxp, iipxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iipxp, iipxm, -1 / 2.0 / hx));
+
+        //bottom
+        tripletList.push_back(Triplet<double>(iifzp, iipzp, 1 / 2.0 / hz));
+        tripletList.push_back(Triplet<double>(iifzp, iipzm, -1 / 2.0 / hz));
+
+        tripletList.push_back(Triplet<double>(iigzp, iifxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iigzp, iifxm, -1 / 2.0 / hx));
+
+        tripletList.push_back(Triplet<double>(iihzp, iigxp, 1 / 2.0 / hx));
+        tripletList.push_back(Triplet<double>(iihzp, iigxm, -1 / 2.0 / hx));
+
+        tripletList.push_back(Triplet<double>(iipzp, iip, 1));
+    }
+
+    {
+        //General BC not in the corners
         size_t ieq = 0;
 
         // left
@@ -736,7 +632,7 @@ void rs2D()
         {
             for (size_t iz = 1 + 1; iz < Nz - 1 - 1; iz++)
             {
-                double r = ix * hx;
+                double r = (ix - 1) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -765,7 +661,7 @@ void rs2D()
                 size_t iipzm = iip - Neq;
 
                 rhs(iifxp) = u(iif) - fRight;
-                rhs(iigxp) = u(iig) - gRight * r;
+                rhs(iigxp) = u(iig) - gRight;
                 rhs(iihxp) = u(iih) - hRight;
                 rhs(iipxp) = (u(iipxp) - u(iipxm)) / 2.0 / hx - dpRight;
 
@@ -783,7 +679,7 @@ void rs2D()
         {
             for (size_t iz = 1; iz < 2; iz++)
             {
-                double r = ix * hx;
+                double r = (ix - 1) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -873,10 +769,10 @@ void rs2D()
 
     jac.setFromTriplets(tripletList.begin(), tripletList.end());
 
-    for (size_t i = 0; i < tripletList.size(); i++)
-    {
-        std::cout << tripletList[i].row() << " " << tripletList[i].col() << " " << tripletList[i].value() << std::endl;
-    }
+    // for (size_t i = 0; i < tripletList.size(); i++)
+    // {
+    //     std::cout << tripletList[i].row() << " " << tripletList[i].col() << " " << tripletList[i].value() << std::endl;
+    // }
 
     // std::cout << jac << std::endl;
 
@@ -900,13 +796,13 @@ void rs2D()
     }
 
     u = u + du;
-    double res = (jac * u + rhs).norm();
+    double res = (jac * du + rhs).norm();
     std::cout << "Res is:" << res << std::endl;
 
-    // writeVTU_vp(hx, Nx, hz, Nz, u);
+    writeVTU_vp(hx, Nx, hz, Nz, u);
 }
 
-void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd u)
+void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd data)
 {
     // his data
     std::vector<double> points = {
@@ -919,13 +815,18 @@ void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd u)
 
     const int dim = 3;
     const int cell_size = 4;
-    std::string filename = "single_tri.vtu";
+    std::string filename = "rs2D.vtu";
     leanvtk::VTUWriter writer;
 
     // my data
     std::vector<double> points2;
     std::vector<int> elements2;
-    std::vector<double> scalar_field2;
+    std::vector<double> u;
+    std::vector<double> v;
+    std::vector<double> w;
+    std::vector<double> p;
+
+    std::vector<double> vel;
 
     for (size_t ix = 1; ix < Nx - 1; ix++)
     {
@@ -935,10 +836,17 @@ void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd u)
             int ii = iz + Nz * ix;
 
             points2.push_back((ix - 1) * hx);
+            points2.push_back(0);
             points2.push_back((iz - 1) * hz);
-            points2.push_back(z);
 
-            scalar_field2.push_back(u(ii));
+            u.push_back(data(ii * 4));
+            v.push_back(data(ii * 4 + 1));
+            w.push_back(data(ii * 4 + 2));
+            p.push_back(data(ii * 4 + 3));
+
+            vel.push_back(data(ii * 4));
+            vel.push_back(data(ii * 4 + 1));
+            vel.push_back(data(ii * 4 + 2));
         }
     }
 
@@ -957,7 +865,13 @@ void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd u)
         }
     }
 
-    writer.add_scalar_field("scalar_field", scalar_field2);
+    writer.add_scalar_field("u", u);
+    writer.add_scalar_field("v", v);
+    writer.add_scalar_field("w", w);
+    writer.add_scalar_field("p", p);
+
+    writer.add_vector_field("vel",vel,dim);
+
     // writer.add_vector_field("vector_field", vector_field, dim);
 
     // writer.write_point_cloud(filename, dim, points2);

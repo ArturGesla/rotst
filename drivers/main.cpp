@@ -11,7 +11,7 @@
 
 void test()
 {
-	diff2D();
+	rs2D();
 }
 
 void execute(std::string msg)
