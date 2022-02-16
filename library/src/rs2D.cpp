@@ -11,16 +11,16 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
 
 void rs2D()
 {
-    size_t nx = 100; // with bc without ghost
-    size_t nz = 100; // with bc without ghost
+    size_t nx = 30; // with bc without ghost
+    size_t nz = 30; // with bc without ghost
 
     //fail lu if nx!=nz bug!!
     // n=4 fail lu
 
     size_t Neq = 4;
 
-    size_t Nx = nx + 2;
-    size_t Nz = nz + 2;
+    size_t Nx = nx + 4; //2 ghosts
+    size_t Nz = nz + 4; //2 ghosts
 
     double Lx = 10;
     double Lz = 1;
@@ -32,12 +32,12 @@ void rs2D()
 
     double eps = hx; //from the axis - has to be fixed
 
-    VectorXd u = VectorXd::Ones(Nx * Nz * Neq);
+    VectorXd u = VectorXd::Zero(Nx * Nz * Neq);
 
     for (size_t ilam = 0; ilam < 1; ilam++)
     {
-        std::cout << "============ Lam = " << 1 + lam * ilam << std::endl;
-        for (size_t i = 0; i < 3; i++)
+        //std::cout << "============ Lam = " << 1 + lam * ilam << std::endl;
+        for (size_t i = 0; i < 5; i++)
         {
             newtonIterationRS2D(Neq, Nx, Nz, hx, hz, 1 + lam * ilam, eps, u);
         }
@@ -83,8 +83,8 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
     // VectorXd p = VectorXd::Ones(Nx * Nz);
     std::vector<Triplet<double>> tripletList;
 
-    size_t tripletSize = (Nz - 2) * (Nx - 2) * (9 + 7 + 8 + 5) + 16 + 12 * 4 + 5 * 2 * (Nz + Nx - 4 - 4);
-    tripletList.reserve(tripletSize); // to do
+    size_t tripletSize = (Nz - 2) * (Nx - 2) * (9 + 7 + 8 + 5) + 16 + 12 * 4 + 5 * 2 * (Nz + Nx - 4 - 4); //redo
+    tripletList.reserve(tripletSize);                                                                     // to do
 
     auto start2 = high_resolution_clock::now();
 
@@ -97,11 +97,11 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
     {
         // x momentum
         size_t ieq = 0;
-        for (size_t ix = 1; ix < Nx - 1; ix++)
+        for (size_t ix = 2; ix < Nx - 2; ix++)
         {
-            for (size_t iz = 1; iz < Nz - 1; iz++)
+            for (size_t iz = 2; iz < Nz - 2; iz++)
             {
-                double r = (ix - 1) * hx + eps;
+                double r = (ix - 2) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -136,6 +136,7 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
 
                 //linear
                 double fourth = (u(iipxp) - u(iipxm)) / 2.0 / hx;
+                //double fourth = (2 / 3.0 * u(iipxp) - 2 / 3.0 * u(iipxm)) / hx + (-1 / 12.0 * u(iipxp + Nz * Neq) + 1 / 12.0 * u(iipxm - Nz * Neq)) / hx;
                 double fifth = -u(iif) / r / r;
                 double sixth = 1 / r * (u(iifxp) - u(iifxm)) / 2.0 / hx;
                 double seventh = (u(iifxp) - 2 * u(iif) + u(iifxm)) / hx / hx;
@@ -156,8 +157,17 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
                 // tripletList.push_back(Triplet<double>(ii, iifzm, -1 / lam * (1 / hz / hz)));
 
                 // non linear
+
+                //2nd order pressure
                 tripletList.push_back(Triplet<double>(ii, iipxp, 1 / 2.0 / hx));
                 tripletList.push_back(Triplet<double>(ii, iipxm, -1 / 2.0 / hx));
+
+                //4th order pressure
+                // tripletList.push_back(Triplet<double>(ii, iipxp, 2 / 3.0 / hx));
+                // tripletList.push_back(Triplet<double>(ii, iipxm, -2 / 3.0 / hx));
+                // tripletList.push_back(Triplet<double>(ii, iipxp + Nz * Neq, -1 / 12.0 / hx));
+                // tripletList.push_back(Triplet<double>(ii, iipxm - Nz * Neq, 1 / 12.0 / hx));
+
                 tripletList.push_back(Triplet<double>(ii, iif, -1 / lam * (-1 / r / r - 2 / hx / hx - 2 / hz / hz) + (u(iifxp) - u(iifxm)) / 2.0 / hx));
                 tripletList.push_back(Triplet<double>(ii, iifxp, -1 / lam * (1 / r / 2.0 / hx + 1 / hx / hx) + u(iif) / 2.0 / hx));
                 tripletList.push_back(Triplet<double>(ii, iifxm, -1 / lam * (-1 / r / 2.0 / hx + 1 / hx / hx) - u(iif) / 2.0 / hx));
@@ -173,11 +183,11 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
     {
         // y momentum
         size_t ieq = 1;
-        for (size_t ix = 1; ix < Nx - 1; ix++)
+        for (size_t ix = 2; ix < Nx - 2; ix++)
         {
-            for (size_t iz = 1; iz < Nz - 1; iz++)
+            for (size_t iz = 2; iz < Nz - 2; iz++)
             {
-                double r = (ix - 1) * hx + eps;
+                double r = (ix - 2) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -244,11 +254,11 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
     {
         // z momentum
         size_t ieq = 2;
-        for (size_t ix = 1; ix < Nx - 1; ix++)
+        for (size_t ix = 2; ix < Nx - 2; ix++)
         {
-            for (size_t iz = 1; iz < Nz - 1; iz++)
+            for (size_t iz = 2; iz < Nz - 2; iz++)
             {
-                double r = (ix - 1) * hx + eps;
+                double r = (ix - 2) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -282,7 +292,9 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
                 double third = u(iih) * (u(iihzp) - u(iihzm)) / 2.0 / hz;
 
                 //linear
-                double fourth = (u(iipzp) - u(iipzm)) / 2.0 / hz;
+                double fourth = (u(iipzp) - u(iipzm)) / 2.0 / hz; //2nd order pressure
+                //double fourth = (2 / 3.0 * u(iipzp) - 2 / 3.0 * u(iipzm)) / hz + (-1 / 12.0 * u(iipzp + Neq) + 1 / 12.0 * u(iipzm - Neq)) / hz; //4th order pressure
+
                 double fifth = 0;
                 double sixth = 1 / r * (u(iihxp) - u(iihxm)) / 2.0 / hx;
                 double seventh = (u(iihxp) - 2 * u(iih) + u(iihxm)) / hx / hx;
@@ -293,8 +305,16 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
 
                 rhs(ii) = linear + nlinear;
 
+                //2nd order pressure
                 tripletList.push_back(Triplet<double>(ii, iipzp, 1 / 2.0 / hz));
                 tripletList.push_back(Triplet<double>(ii, iipzm, -1 / 2.0 / hz));
+
+                //4th order pressure
+                // tripletList.push_back(Triplet<double>(ii, iipzp, 2 / 3.0 / hz));
+                // tripletList.push_back(Triplet<double>(ii, iipzm, -2 / 3.0 / hz));
+                // tripletList.push_back(Triplet<double>(ii, iipzp + Neq, -1 / 12.0 / hz));
+                // tripletList.push_back(Triplet<double>(ii, iipzm - Neq, 1 / 12.0 / hz));
+
                 tripletList.push_back(Triplet<double>(ii, iih, -1 / lam * (-2 / hx / hx - 2 / hz / hz) + (u(iihzp) - u(iihzm)) / 2.0 / hz));
                 tripletList.push_back(Triplet<double>(ii, iihxp, -1 / lam * (1 / r / 2.0 / hx + 1 / hx / hx) + u(iif) / 2.0 / hx));
                 tripletList.push_back(Triplet<double>(ii, iihxm, -1 / lam * (-1 / r / 2.0 / hx + 1 / hx / hx) - u(iif) / 2.0 / hx));
@@ -309,11 +329,11 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
     {
         // conti
         size_t ieq = 3;
-        for (size_t ix = 1; ix < Nx - 1; ix++)
+        for (size_t ix = 2; ix < Nx - 2; ix++)
         {
-            for (size_t iz = 1; iz < Nz - 1; iz++)
+            for (size_t iz = 2; iz < Nz - 2; iz++)
             {
-                double r = (ix - 1) * hx + eps;
+                double r = (ix - 2) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -382,34 +402,65 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
 
     double pRef = 1;
 
-    double cval = 100;
+    double cval = 1;
 
     {
         // 4 corner points are constant for all the BC
         for (size_t ieq = 0; ieq < Neq; ieq++)
         {
-            size_t i_left_top = 0 + ieq;
-            size_t i_right_top = (Nx * Nz - Nz) * Neq + ieq;
-            size_t i_left_bot = (Nz - 1) * Neq + ieq;
-            size_t i_right_bot = (Nx * Nz - 1) * Neq + ieq;
+            //left top corner
+            size_t ix = 1;
+            size_t iz = 1;
 
-            rhs(i_left_top) = u(i_left_top) - cval;
-            rhs(i_right_top) = u(i_right_top) - cval;
-            rhs(i_left_bot) = u(i_left_bot) - cval;
-            rhs(i_right_bot) = u(i_right_bot) - cval;
+            size_t ii = (iz + ix * Nz) * Neq + ieq;
 
-            tripletList.push_back(Triplet<double>(i_left_top, i_left_top, 1));
-            tripletList.push_back(Triplet<double>(i_right_top, i_right_top, 1));
-            tripletList.push_back(Triplet<double>(i_left_bot, i_left_bot, 1));
-            tripletList.push_back(Triplet<double>(i_right_bot, i_right_bot, 1));
+            rhs(ii) = u(ii) - cval;
+
+            tripletList.push_back(Triplet<double>(ii, ii, 1));
+        }
+        for (size_t ieq = 0; ieq < Neq; ieq++)
+        {
+            //left bot corner
+            size_t ix = 1;
+            size_t iz = Nz - 2;
+
+            size_t ii = (iz + ix * Nz) * Neq + ieq;
+
+            rhs(ii) = u(ii) - cval;
+
+            tripletList.push_back(Triplet<double>(ii, ii, 1));
+        }
+        for (size_t ieq = 0; ieq < Neq; ieq++)
+        {
+            //right top corner
+            size_t ix = Nx - 2;
+            size_t iz = 1;
+
+            size_t ii = (iz + ix * Nz) * Neq + ieq;
+
+            rhs(ii) = u(ii) - cval;
+
+            tripletList.push_back(Triplet<double>(ii, ii, 1));
+        }
+        for (size_t ieq = 0; ieq < Neq; ieq++)
+        {
+            //right bot corner
+            size_t ix = Nx - 2;
+            size_t iz = Nz - 2;
+
+            size_t ii = (iz + ix * Nz) * Neq + ieq;
+
+            rhs(ii) = u(ii) - cval;
+
+            tripletList.push_back(Triplet<double>(ii, ii, 1));
         }
     }
 
     //Corners BC
     {
         //left top corner
-        size_t ix = 1;
-        size_t iz = 1;
+        size_t ix = 2;
+        size_t iz = 2;
 
         size_t ii = (iz + ix * Nz) * Neq;
 
@@ -470,8 +521,8 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
 
     {
         //left bottom corner
-        size_t ix = 1;
-        size_t iz = Nz - 2;
+        size_t ix = 2;
+        size_t iz = Nz - 3;
 
         size_t ii = (iz + ix * Nz) * Neq;
 
@@ -499,7 +550,7 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
         size_t iipzp = iip + Neq;
         size_t iipzm = iip - Neq;
 
-        size_t ip21 = (2 + Nz) * Neq + 3;
+        size_t ip21 = (3 + Nz + Nz) * Neq + 3;
 
         rhs(iifxm) = u(ip21) - pRef;
         rhs(iigxm) = u(iig) - gLeft;
@@ -534,8 +585,8 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
 
     {
         //right top corner
-        size_t ix = Nx - 2;
-        size_t iz = 1;
+        size_t ix = Nx - 3;
+        size_t iz = 2;
 
         size_t ii = (iz + ix * Nz) * Neq;
 
@@ -563,7 +614,7 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
         size_t iipzp = iip + Neq;
         size_t iipzm = iip - Neq;
 
-        size_t ip12 = (1 + Nz + Nz) * Neq + 3;
+        size_t ip12 = (2 + Nz + Nz + Nz) * Neq + 3;
 
         rhs(iifxp) = u(iif) - fRight;
         rhs(iigxp) = u(iig) - gRight;
@@ -598,8 +649,8 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
 
     {
         //right bottom corner
-        size_t ix = Nx - 2;
-        size_t iz = Nz - 2;
+        size_t ix = Nx - 3;
+        size_t iz = Nz - 3;
 
         size_t ii = (iz + ix * Nz) * Neq;
 
@@ -627,7 +678,7 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
         size_t iipzp = iip + Neq;
         size_t iipzm = iip - Neq;
 
-        size_t ip22 = (1 + Nz + Nz + 1) * Neq + 3;
+        size_t ip22 = (1 + Nz + Nz + 1 + Nz + 3) * Neq + 3;
 
         rhs(iifxp) = u(ip22) - pRef;
         rhs(iigxp) = u(iig) - gRight;
@@ -665,9 +716,9 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
         size_t ieq = 0;
 
         // left
-        for (size_t ix = 1; ix < 2; ix++)
+        for (size_t ix = 2; ix < 3; ix++)
         {
-            for (size_t iz = 1 + 1; iz < Nz - 1 - 1; iz++)
+            for (size_t iz = 1 + 1 + 1; iz < Nz - 1 - 1 - 1; iz++)
             {
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -710,11 +761,11 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
         }
 
         // right
-        for (size_t ix = Nx - 2; ix < Nx - 1; ix++)
+        for (size_t ix = Nx - 3; ix < Nx - 2; ix++)
         {
-            for (size_t iz = 1 + 1; iz < Nz - 1 - 1; iz++)
+            for (size_t iz = 1 + 1 + 1; iz < Nz - 1 - 1 - 1; iz++)
             {
-                double r = (ix - 1) * hx + eps;
+                double r = (ix - 2) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -757,11 +808,11 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
         }
 
         // top
-        for (size_t ix = 1 + 1; ix < Nx - 1 - 1; ix++)
+        for (size_t ix = 1 + 1 + 1; ix < Nx - 1 - 1 - 1; ix++)
         {
-            for (size_t iz = 1; iz < 2; iz++)
+            for (size_t iz = 1 + 1; iz < 2 + 1; iz++)
             {
-                double r = (ix - 1) * hx + eps;
+                double r = (ix - 2) * hx + eps;
 
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -804,9 +855,9 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
         }
 
         // bottom
-        for (size_t ix = 1 + 1; ix < Nx - 1 - 1; ix++)
+        for (size_t ix = 1 + 1 + 1; ix < Nx - 1 - 1 - 1; ix++)
         {
-            for (size_t iz = Nz - 2; iz < Nz - 1; iz++)
+            for (size_t iz = Nz - 3; iz < Nz - 2; iz++)
             {
                 size_t ii = (iz + ix * Nz) * Neq + ieq;
 
@@ -849,6 +900,249 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
         }
     }
 
+    {
+        // 4 corner points are constant for all the BC - OUTER GHOST
+        for (size_t ieq = 0; ieq < Neq; ieq++)
+        {
+            //left top corner
+            size_t ix = 0;
+            size_t iz = 0;
+
+            size_t ii = (iz + ix * Nz) * Neq + ieq;
+
+            rhs(ii) = u(ii) - cval;
+
+            tripletList.push_back(Triplet<double>(ii, ii, 1));
+        }
+        for (size_t ieq = 0; ieq < Neq; ieq++)
+        {
+            //left bot corner
+            size_t ix = 0;
+            size_t iz = Nz - 1;
+
+            size_t ii = (iz + ix * Nz) * Neq + ieq;
+
+            rhs(ii) = u(ii) - cval;
+
+            tripletList.push_back(Triplet<double>(ii, ii, 1));
+        }
+        for (size_t ieq = 0; ieq < Neq; ieq++)
+        {
+            //right top corner
+            size_t ix = Nx - 1;
+            size_t iz = 0;
+
+            size_t ii = (iz + ix * Nz) * Neq + ieq;
+
+            rhs(ii) = u(ii) - cval;
+
+            tripletList.push_back(Triplet<double>(ii, ii, 1));
+        }
+        for (size_t ieq = 0; ieq < Neq; ieq++)
+        {
+            //right bot corner
+            size_t ix = Nx - 1;
+            size_t iz = Nz - 1;
+
+            size_t ii = (iz + ix * Nz) * Neq + ieq;
+
+            rhs(ii) = u(ii) - cval;
+
+            tripletList.push_back(Triplet<double>(ii, ii, 1));
+        }
+    }
+
+    //outer ghost layer
+    // top
+    for (size_t ix = 1; ix < Nx - 1; ix++)
+    {
+        for (size_t iz = 1; iz < 2; iz++)
+        {
+            size_t ii = (iz + ix * Nz) * Neq;
+
+            size_t iif = ii;
+            size_t iifxp = iif + Nz * Neq;
+            size_t iifxm = iif - Nz * Neq;
+            size_t iifzp = iif + Neq;
+            size_t iifzm = iif - Neq;
+
+            size_t iig = iif + 1;
+            size_t iigxp = iig + Nz * Neq;
+            size_t iigxm = iig - Nz * Neq;
+            size_t iigzp = iig + Neq;
+            size_t iigzm = iig - Neq;
+
+            size_t iih = iig + 1;
+            size_t iihxp = iih + Nz * Neq;
+            size_t iihxm = iih - Nz * Neq;
+            size_t iihzp = iih + Neq;
+            size_t iihzm = iih - Neq;
+
+            size_t iip = iih + 1;
+            size_t iipxp = iip + Nz * Neq;
+            size_t iipxm = iip - Nz * Neq;
+            size_t iipzp = iip + Neq;
+            size_t iipzm = iip - Neq;
+
+            rhs(iifzm) = u(iifzm) - cval;
+            rhs(iigzm) = u(iigzm) - cval;
+            rhs(iihzm) = u(iihzm) - cval;
+
+            rhs(iipzm) = (u(iipzp) - u(iipzm)) / 2.0 / hz - dpTop;
+
+            tripletList.push_back(Triplet<double>(iifzm, iifzm, 1));
+            tripletList.push_back(Triplet<double>(iigzm, iigzm, 1));
+            tripletList.push_back(Triplet<double>(iihzm, iihzm, 1));
+
+            tripletList.push_back(Triplet<double>(iipzm, iipzp, 1 / 2.0 / hz));
+            tripletList.push_back(Triplet<double>(iipzm, iipzm, -1 / 2.0 / hz));
+        }
+    }
+
+    // bot
+    for (size_t ix = 1; ix < Nx - 1; ix++)
+    {
+        for (size_t iz = Nz - 1 - 1; iz < Nz - 1; iz++)
+        {
+            size_t ii = (iz + ix * Nz) * Neq;
+
+            size_t iif = ii;
+            size_t iifxp = iif + Nz * Neq;
+            size_t iifxm = iif - Nz * Neq;
+            size_t iifzp = iif + Neq;
+            size_t iifzm = iif - Neq;
+
+            size_t iig = iif + 1;
+            size_t iigxp = iig + Nz * Neq;
+            size_t iigxm = iig - Nz * Neq;
+            size_t iigzp = iig + Neq;
+            size_t iigzm = iig - Neq;
+
+            size_t iih = iig + 1;
+            size_t iihxp = iih + Nz * Neq;
+            size_t iihxm = iih - Nz * Neq;
+            size_t iihzp = iih + Neq;
+            size_t iihzm = iih - Neq;
+
+            size_t iip = iih + 1;
+            size_t iipxp = iip + Nz * Neq;
+            size_t iipxm = iip - Nz * Neq;
+            size_t iipzp = iip + Neq;
+            size_t iipzm = iip - Neq;
+
+            rhs(iifzp) = u(iifzp) - cval;
+            rhs(iigzp) = u(iigzp) - cval;
+            rhs(iihzp) = u(iihzp) - cval;
+
+            rhs(iipzp) = (u(iipzp) - u(iipzm)) / 2.0 / hz - dpBottom;
+
+            tripletList.push_back(Triplet<double>(iifzp, iifzp, 1));
+            tripletList.push_back(Triplet<double>(iigzp, iigzp, 1));
+            tripletList.push_back(Triplet<double>(iihzp, iihzp, 1));
+
+            tripletList.push_back(Triplet<double>(iipzp, iipzp, 1 / 2.0 / hz));
+            tripletList.push_back(Triplet<double>(iipzp, iipzm, -1 / 2.0 / hz));
+        }
+    }
+
+    //left
+    for (size_t ix = 1; ix < 2; ix++)
+    {
+        for (size_t iz = 1; iz < Nz - 1; iz++)
+        {
+            size_t ii = (iz + ix * Nz) * Neq;
+
+            size_t iif = ii;
+            size_t iifxp = iif + Nz * Neq;
+            size_t iifxm = iif - Nz * Neq;
+            size_t iifzp = iif + Neq;
+            size_t iifzm = iif - Neq;
+
+            size_t iig = iif + 1;
+            size_t iigxp = iig + Nz * Neq;
+            size_t iigxm = iig - Nz * Neq;
+            size_t iigzp = iig + Neq;
+            size_t iigzm = iig - Neq;
+
+            size_t iih = iig + 1;
+            size_t iihxp = iih + Nz * Neq;
+            size_t iihxm = iih - Nz * Neq;
+            size_t iihzp = iih + Neq;
+            size_t iihzm = iih - Neq;
+
+            size_t iip = iih + 1;
+            size_t iipxp = iip + Nz * Neq;
+            size_t iipxm = iip - Nz * Neq;
+            size_t iipzp = iip + Neq;
+            size_t iipzm = iip - Neq;
+
+            rhs(iifxm) = u(iifxm) - cval;
+            rhs(iigxm) = u(iigxm) - cval;
+            rhs(iihxm) = u(iihxm) - cval;
+
+            rhs(iipxm) = (u(iipxp) - u(iipxm)) / 2.0 / hx - dpLeft;
+
+            tripletList.push_back(Triplet<double>(iifxm, iifxm, 1));
+            tripletList.push_back(Triplet<double>(iigxm, iigxm, 1));
+            tripletList.push_back(Triplet<double>(iihxm, iihxm, 1));
+
+            tripletList.push_back(Triplet<double>(iipxm, iipxp, 1 / 2.0 / hx));
+            tripletList.push_back(Triplet<double>(iipxm, iipxm, -1 / 2.0 / hx));
+        }
+    }
+
+    //right
+    for (size_t ix = Nx - 2; ix < Nx - 1; ix++)
+    {
+        for (size_t iz = 1; iz < Nz - 1; iz++)
+        {
+            size_t ii = (iz + ix * Nz) * Neq;
+
+            size_t iif = ii;
+            size_t iifxp = iif + Nz * Neq;
+            size_t iifxm = iif - Nz * Neq;
+            size_t iifzp = iif + Neq;
+            size_t iifzm = iif - Neq;
+
+            size_t iig = iif + 1;
+            size_t iigxp = iig + Nz * Neq;
+            size_t iigxm = iig - Nz * Neq;
+            size_t iigzp = iig + Neq;
+            size_t iigzm = iig - Neq;
+
+            size_t iih = iig + 1;
+            size_t iihxp = iih + Nz * Neq;
+            size_t iihxm = iih - Nz * Neq;
+            size_t iihzp = iih + Neq;
+            size_t iihzm = iih - Neq;
+
+            size_t iip = iih + 1;
+            size_t iipxp = iip + Nz * Neq;
+            size_t iipxm = iip - Nz * Neq;
+            size_t iipzp = iip + Neq;
+            size_t iipzm = iip - Neq;
+
+            rhs(iifxp) = u(iifxp) - cval;
+            rhs(iigxp) = u(iigxp) - cval;
+            rhs(iihxp) = u(iihxp) - cval;
+
+            rhs(iipxp) = (u(iipxp) - u(iipxm)) / 2.0 / hx - dpRight;
+
+            tripletList.push_back(Triplet<double>(iifxp, iifxp, 1));
+            tripletList.push_back(Triplet<double>(iigxp, iigxp, 1));
+            tripletList.push_back(Triplet<double>(iihxp, iihxp, 1));
+
+            tripletList.push_back(Triplet<double>(iipxp, iipxp, 1 / 2.0 / hx));
+            tripletList.push_back(Triplet<double>(iipxp, iipxm, -1 / 2.0 / hx));
+        }
+    }
+
+    // for (size_t i = 0; i < tripletList.size(); i++)
+    // {
+    //     std::cout << tripletList[i].row() << " " << tripletList[i].col() << " " << tripletList[i].value() << std::endl;
+    // }
+    // return;
+
     jac.setFromTriplets(tripletList.begin(), tripletList.end());
 
     // for (size_t i = 0; i < tripletList.size(); i++)
@@ -863,12 +1157,13 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
     //std::cout << "rl size: " << tripletList.size() << std::endl;
     auto stop2 = high_resolution_clock::now();
     auto duration2 = duration_cast<microseconds>(stop2 - start2);
-    std::cout << "init:" << duration2.count() << std::endl;
+    //std::cout << "init:" << duration2.count() << std::endl;
 
     auto start = high_resolution_clock::now();
 
     SparseLU<SparseMatrix<double>> solver;
     //BiCGSTAB<SparseMatrix<double>, IncompleteLUT<double>> solver; //does not work for zero ig
+    //solver.setTolerance(1E-1);
 
     solver.compute(jac);
 
@@ -889,9 +1184,14 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
     std::cout << "solve:" << duration.count() << std::endl;
 
     u = u + du;
-    //double res = (jac * du + rhs).norm();
-    double res = (du).norm();
-    std::cout << "(?) czy to nie powinno byc 0 od razu (?) Res is:" << res << std::endl;
+    {
+        double res = (jac * du + rhs).norm();
+        std::cout << "1er Res is:" << res << std::endl;
+    }
+    {
+        double res = (du).norm();
+        std::cout << "2eme Res is:" << res << std::endl;
+    }
 }
 
 void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd data)
@@ -920,16 +1220,16 @@ void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd data)
 
     std::vector<double> vel;
 
-    for (size_t ix = 1; ix < Nx - 1; ix++)
+    for (size_t ix = 1 + 1; ix < Nx - 1 - 1; ix++)
     {
-        for (size_t iz = 1; iz < Nz - 1; iz++)
+        for (size_t iz = 1 + 1; iz < Nz - 1 - 1; iz++)
         {
             double z = 0;
             int ii = iz + Nz * ix;
 
-            points2.push_back((ix - 1) * hx);
+            points2.push_back((ix - 2) * hx);
             points2.push_back(0);
-            points2.push_back((iz - 1) * hz);
+            points2.push_back((iz - 2) * hz);
 
             u.push_back(data(ii * 4));
             v.push_back(data(ii * 4 + 1));
@@ -942,18 +1242,18 @@ void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd data)
         }
     }
 
-    for (size_t ix = 1; ix < Nx - 1 - 1; ix++)
+    for (size_t ix = 1 + 1; ix < Nx - 1 - 1 - 1; ix++)
     {
-        for (size_t iz = 1; iz < Nz - 1 - 1; iz++)
+        for (size_t iz = 1 + 1; iz < Nz - 1 - 1 - 1; iz++)
         {
             double z = 0;
-            int ii = (iz - 1) + (Nx - 2) * (ix - 1);
+            int ii = (iz - 2) + (Nx - 4) * (ix - 2);
             // myfile << ix * hx << ",\t\t" << (Nz - 2 - iz) * hz << ",\t\t" << z << ",\t\t" << phi(ii) << std::endl;
 
             elements2.push_back(ii);
             elements2.push_back(ii + 1);
-            elements2.push_back(ii + 1 + Nz - 2);
-            elements2.push_back(ii + 1 + Nz - 3);
+            elements2.push_back(ii + 1 + Nz - 2 - 2);
+            elements2.push_back(ii + 1 + Nz - 3 - 2);
         }
     }
 

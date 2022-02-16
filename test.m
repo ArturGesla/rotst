@@ -1,8 +1,8 @@
 clc; clear;
-a=importdata('out')
-x=a(:,1)
-y=a(:,2)
-z=a(:,3)
+a=importdata('out');
+x=a(:,1);
+y=a(:,2);
+z=a(:,3);
 A=[];
 for i=1:length(x)
     A(x(i)+1,y(i)+1)=z(i);
@@ -17,11 +17,11 @@ B=A;
 
 
 %%
-iz=3; 
-ix=1;
+iz=5; 
+ix=6;
 
-Nz=5;
-Nx=5;
+Nz=7;
+Nx=7;
 Neq=4;
 ieq=0;
  ii = (iz + ix * Nz) * Neq + ieq;
@@ -52,7 +52,7 @@ ieq=0;
 display("lol");
                  rank(B)
                   B=[B;zeros(length(A),1)'];
-                  B(end,iih+1)=1;
+                  B(end,iif+1)=1;
                   %B(end,iipzp+1)=1;
                   %B(end,iipzm+1)=-1;
                   rank(B)
