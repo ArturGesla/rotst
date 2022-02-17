@@ -9,10 +9,10 @@ using namespace std::chrono;
 
 void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz, double lam, double eps, VectorXd &u);
 
-void rs2D()
+void rs2D(double re, size_t nx, size_t nz, size_t nnewt, size_t nconti)
 {
-    size_t nx = 30; // with bc without ghost
-    size_t nz = 30; // with bc without ghost
+    //size_t nx = 30; // with bc without ghost
+    //size_t nz = 30; // with bc without ghost
 
     //fail lu if nx!=nz bug!!
     // n=4 fail lu
@@ -29,17 +29,19 @@ void rs2D()
     double hz = Lz / double(nz - 1);
 
     double lam = 1;
+    lam = re;
 
     double eps = hx; //from the axis - has to be fixed
 
     VectorXd u = VectorXd::Zero(Nx * Nz * Neq);
 
-    for (size_t ilam = 0; ilam < 1; ilam++)
+    for (size_t ilam = 0; ilam < nconti; ilam++)
     {
-        //std::cout << "============ Lam = " << 1 + lam * ilam << std::endl;
-        for (size_t i = 0; i < 5; i++)
+        std::cout << "============ Lam = " << lam + lam * ilam << " ============"<<std::endl;
+        for (size_t i = 0; i < nnewt; i++)
         {
-            newtonIterationRS2D(Neq, Nx, Nz, hx, hz, 1 + lam * ilam, eps, u);
+            std::cout << "iter: " << i << std::endl;
+            newtonIterationRS2D(Neq, Nx, Nz, hx, hz, lam + lam * ilam, eps, u);
         }
     }
 
@@ -1142,6 +1144,10 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
     //     std::cout << tripletList[i].row() << " " << tripletList[i].col() << " " << tripletList[i].value() << std::endl;
     // }
     // return;
+    //internal::BandMatrix<double> a(Nx*Nz*Neq,Nx*Nz*Neq,13,13);
+    //internal::BandMatrix<double> a(5,5,1,1);
+
+    //std::cout<<a.toDenseMatrix()<<std::endl;
 
     jac.setFromTriplets(tripletList.begin(), tripletList.end());
 
@@ -1181,7 +1187,7 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
 
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
-    std::cout << "solve:" << duration.count() << std::endl;
+    //std::cout << "solve:" << duration.count() << std::endl;
 
     u = u + du;
     {

@@ -56,4 +56,18 @@ display("lol");
                   %B(end,iipzp+1)=1;
                   %B(end,iipzm+1)=-1;
                   rank(B)
+                  
+                  %%
+c=unique(y-x)
+hold on;
+for i=1:length(c)
+    plot(x,x+c(i),'g')
+end
+plot(x,y,'x')
+
+
+xlim([1,196])
+ylim([1,196])
+
+
                
