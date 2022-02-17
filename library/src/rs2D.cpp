@@ -1187,7 +1187,7 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
 
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
-    //std::cout << "solve:" << duration.count() << std::endl;
+    std::cout << "solve:" << duration.count() << std::endl;
 
     u = u + du;
     {
@@ -1253,7 +1253,7 @@ void writeVTU_vp(double hx, double Nx, double hz, double Nz, VectorXd data)
         for (size_t iz = 1 + 1; iz < Nz - 1 - 1 - 1; iz++)
         {
             double z = 0;
-            int ii = (iz - 2) + (Nx - 4) * (ix - 2);
+            int ii = (iz - 2) + (Nz - 4) * (ix - 2);
             // myfile << ix * hx << ",\t\t" << (Nz - 2 - iz) * hz << ",\t\t" << z << ",\t\t" << phi(ii) << std::endl;
 
             elements2.push_back(ii);
