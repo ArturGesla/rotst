@@ -6,13 +6,10 @@
 #include "general.hpp"
 #include "rs1D.hpp"
 #include "rs2D.hpp"
+#include "rs2Dfv.hpp"
 #include "condiff1D.hpp"
 #include "diff2D.hpp"
 
-void test()
-{
-	//rs2D();
-}
 
 int main(int argc, char **argv)
 {
@@ -47,6 +44,9 @@ int main(int argc, char **argv)
 			size_t nnewt = 5;
 			size_t nconti = 1;
 
+			double lx=10;
+			double lz=1;
+
 			if (i < argc - 1 && argv[i + 1] == std::string("-re"))
 			{
 				re = std::stof(argv[i + 2]);
@@ -78,10 +78,22 @@ int main(int argc, char **argv)
 				i += 2;
 			}
 
-			if (verbose)
-				std::cout << "RE: " << re << " nx: " << nx << " nz: " << nz << " nnewt: " << nnewt << " nconti: " << nconti << std::endl;
+			if (i < argc - 1 && argv[i + 1] == std::string("-lx"))
+			{
+				lx = std::stof(argv[i + 2]);
+				i += 2;
+			}
 
-			rs2D(re, nx, nz, nnewt, nconti);
+			if (i < argc - 1 && argv[i + 1] == std::string("-lz"))
+			{
+				lz = std::stof(argv[i + 2]);
+				i += 2;
+			}
+
+			if (verbose)
+				std::cout << "RE: " << re << " nx: " << nx << " nz: " << nz << " nnewt: " << nnewt << " nconti: " << nconti <<" lx: "<<lx <<" lz: "<<lz<<std::endl;
+
+			rs2Dfv::rs2D(re, nx, nz, nnewt, nconti, lx,lz);
 		}
 	}
 	return 0;

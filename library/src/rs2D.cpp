@@ -9,7 +9,7 @@ using namespace std::chrono;
 
 void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz, double lam, double eps, VectorXd &u);
 
-void rs2D(double re, size_t nx, size_t nz, size_t nnewt, size_t nconti)
+void rs2D(double re, size_t nx, size_t nz, size_t nnewt, size_t nconti, double Lx, double Lz)
 {
     //size_t nx = 30; // with bc without ghost
     //size_t nz = 30; // with bc without ghost
@@ -22,8 +22,8 @@ void rs2D(double re, size_t nx, size_t nz, size_t nnewt, size_t nconti)
     size_t Nx = nx + 4; //2 ghosts
     size_t Nz = nz + 4; //2 ghosts
 
-    double Lx = 10;
-    double Lz = 1;
+    //double Lx = 10;
+    //double Lz = 1;
 
     double hx = Lx / double(nx - 1);
     double hz = Lz / double(nz - 1);
@@ -1163,7 +1163,7 @@ void newtonIterationRS2D(size_t Neq, size_t Nx, size_t Nz, double hx, double hz,
     //std::cout << "rl size: " << tripletList.size() << std::endl;
     auto stop2 = high_resolution_clock::now();
     auto duration2 = duration_cast<microseconds>(stop2 - start2);
-    //std::cout << "init:" << duration2.count() << std::endl;
+    std::cout << "init:" << duration2.count() << std::endl;
 
     auto start = high_resolution_clock::now();
 
