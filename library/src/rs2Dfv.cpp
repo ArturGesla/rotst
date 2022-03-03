@@ -45,6 +45,16 @@ namespace rs2Dfv
                 std::cout << "iter: " << i << std::endl;
                 rs2Dfv::newtonIterationRS2D(Neq, Nx, Nz, hx, hz, lam + lam * ilam, eps, u);
             }
+            // std::string name = std::to_string(ilam);
+
+            // int nzero = 3 - std::floor(std::log10(ilam+0.1));
+            // for (size_t izero = 0; izero < nzero; izero++)
+            // {
+            //     name = "0" + name;
+            // }
+
+            // name = "rs2DFV_" + std::to_string(ilam) + ".vtu";
+            // rs2Dfv::writeVTU_vp_wg_name(hx, Nx, hz, Nz, u, name);
         }
 
         // for (size_t i = 0; i < 10; i++)
@@ -110,7 +120,7 @@ namespace rs2Dfv
                 {
                     double r = (ix - 2) * hx + hx / 2;
 
-                    size_t ii = (iz + ix * Nz) * Neq + ieq;
+                    size_t ii = (iz + ix * Nz) * Neq + ieq; //equation number
 
                     size_t iif = ii - ieq;
                     size_t iifxp = iif + Nz * Neq;
@@ -143,8 +153,8 @@ namespace rs2Dfv
 
                     // //linear
                     // double first = 0;
-                    // double second = 0;
-                    // double third = 0;
+                    //double second = 0;
+                    //double third = 0;
 
                     //linear
                     double fourth = (u(iipxp) - u(iipxm)) / 2.0 / hx;
@@ -159,7 +169,7 @@ namespace rs2Dfv
 
                     rhs(ii) = nlinear + linear;
 
-                    // linear
+                    // // linear
                     // tripletList.push_back(Triplet<double>(ii, iipxp, 1 / 2.0 / hx));
                     // tripletList.push_back(Triplet<double>(ii, iipxm, -1 / 2.0 / hx));
                     // tripletList.push_back(Triplet<double>(ii, iif, -1 / lam * (-1 / r / r - 2 / hx / hx - 2 / hz / hz)));
@@ -248,7 +258,7 @@ namespace rs2Dfv
                     double linear = fourth - 1 / lam * (fifth + sixth + seventh + eigth);
 
                     rhs(ii) = linear + nlinear;
-                    // linear
+                    // // linear
                     // tripletList.push_back(Triplet<double>(ii, iig, -1 / lam * (-1 / r / r - 2 / hx / hx - 2 / hz / hz)));
                     // tripletList.push_back(Triplet<double>(ii, iigxp, -1 / lam * (1 / r / 2.0 / hx + 1 / hx / hx)));
                     // tripletList.push_back(Triplet<double>(ii, iigxm, -1 / lam * (-1 / r / 2.0 / hx + 1 / hx / hx)));
@@ -588,7 +598,7 @@ namespace rs2Dfv
                     tripletList.push_back(Triplet<double>(iig, iig, 1 / 2.0));
                     tripletList.push_back(Triplet<double>(iig, iigxm, 1 / 2.0));
                     tripletList.push_back(Triplet<double>(iih, iih, 1 / 2.0));
-                    tripletList.push_back(Triplet<double>(iig, iihxm, 1 / 2.0));
+                    tripletList.push_back(Triplet<double>(iih, iihxm, 1 / 2.0));
 
                     tripletList.push_back(Triplet<double>(iip, iip, 1 / hx));
                     tripletList.push_back(Triplet<double>(iip, iipxm, -1 / hx));
@@ -645,7 +655,7 @@ namespace rs2Dfv
                 }
             }
             // bottom without last point - thiw will be p pinning
-            for (size_t ix = 2; ix < Nx - 3; ix++)
+            for (size_t ix = 3; ix < Nx - 2; ix++)
             {
                 for (size_t iz = Nz - 2; iz < Nz - 1; iz++)
                 {
@@ -692,7 +702,7 @@ namespace rs2Dfv
                 }
             }
             // p pinning
-            for (size_t ix = Nx - 3; ix < Nx - 2; ix++)
+            for (size_t ix = 2; ix < 3; ix++)
             {
                 for (size_t iz = Nz - 2; iz < Nz - 1; iz++)
                 {
@@ -725,16 +735,20 @@ namespace rs2Dfv
                     rhs(iif) = (u(iif) + u(iifzm)) / 2.0 - fBottom;
                     rhs(iig) = (u(iig) + u(iigzm)) / 2.0 - gBottom;
                     rhs(iih) = (u(iih) + u(iihzm)) / 2.0 - hBottom;
-                    rhs(iip) = u(iip) - pRef;
+                    //rhs(iip) = u(iip) - pRef;
+                    rhs(iip) = (u(iip) + u(iipzm)) / 2.0 - pRef;
 
                     tripletList.push_back(Triplet<double>(iif, iif, 1 / 2.0));
                     tripletList.push_back(Triplet<double>(iif, iifzm, 1 / 2.0));
                     tripletList.push_back(Triplet<double>(iig, iig, 1 / 2.0));
                     tripletList.push_back(Triplet<double>(iig, iigzm, 1 / 2.0));
                     tripletList.push_back(Triplet<double>(iih, iih, 1 / 2.0));
-                    tripletList.push_back(Triplet<double>(iig, iihzm, 1 / 2.0));
+                    tripletList.push_back(Triplet<double>(iih, iihzm, 1 / 2.0));
 
-                    tripletList.push_back(Triplet<double>(iip, iip, 1));
+                    tripletList.push_back(Triplet<double>(iip, iip, 1 / 2.0));
+                    tripletList.push_back(Triplet<double>(iip, iipzm, 1 / 2.0));
+
+                    //tripletList.push_back(Triplet<double>(iip, iip, 1));
                 }
             }
         }
@@ -1028,6 +1042,11 @@ namespace rs2Dfv
         {
             double res = (rhs).norm();
             std::cout << "Norm of prev rhs:" << res << std::endl;
+
+            // if (res < 9.0)
+            // {
+            //     std::cout << rhs << std::endl;
+            // }
         }
     }
 
@@ -1120,6 +1139,103 @@ namespace rs2Dfv
         const int dim = 3;
         const int cell_size = 4;
         std::string filename = "rs2D.vtu";
+        leanvtk::VTUWriter writer;
+
+        // my data
+        std::vector<double> points2;
+        std::vector<int> elements2;
+        std::vector<double> u;
+        std::vector<double> v;
+        std::vector<double> w;
+        std::vector<double> p;
+
+        std::vector<double> vel;
+
+        for (size_t ix = 0; ix < Nx; ix++)
+        {
+            for (size_t iz = 0; iz < Nz; iz++)
+            {
+                double y = 0;
+                int ii = iz + Nz * ix;
+                double x = (ix)*hx - 2 * hx;
+                double z = (iz)*hz - 2 * hz;
+
+                //left top
+                points2.push_back(x); //x
+                points2.push_back(y); //y
+                points2.push_back(z); //z
+
+                //left bot
+                points2.push_back(x);      //x
+                points2.push_back(y);      //y
+                points2.push_back(z + hz); //z
+
+                //right bot
+                points2.push_back(x + hx); //x
+                points2.push_back(y);      //y
+                points2.push_back(z + hz); //z
+
+                //right top
+                points2.push_back(x + hx); //x
+                points2.push_back(y);      //y
+                points2.push_back(z);      //z
+            }
+        }
+
+        for (size_t ix = 0; ix < Nx; ix++)
+        {
+            for (size_t iz = 0; iz < Nz; iz++)
+            {
+                double z = 0;
+                size_t ii = iz + Nz * ix;
+
+                u.push_back(data(ii * 4));
+                v.push_back(data(ii * 4 + 1));
+                w.push_back(data(ii * 4 + 2));
+                p.push_back(data(ii * 4 + 3));
+
+                vel.push_back(data(ii * 4));
+                vel.push_back(data(ii * 4 + 1));
+                vel.push_back(data(ii * 4 + 2));
+
+                size_t ii_pt = ii * 4;
+
+                elements2.push_back(ii_pt);
+                elements2.push_back(ii_pt + 1);
+                elements2.push_back(ii_pt + 2);
+                elements2.push_back(ii_pt + 3);
+            }
+        }
+
+        // std::cout<<points2.size()<<"\n"<<u.size()<<"\n"<<elements2.size()<<std::endl;
+        // return;
+
+        writer.add_cell_scalar_field("u", u);
+        writer.add_cell_scalar_field("v", v);
+        writer.add_cell_scalar_field("w", w);
+        writer.add_cell_scalar_field("p", p);
+
+        writer.add_cell_vector_field("vel", vel, dim);
+
+        // writer.add_vector_field("vector_field", vector_field, dim);
+
+        // writer.write_point_cloud(filename, dim, points2);
+        writer.write_surface_mesh(filename, dim, cell_size, points2, elements2);
+    }
+    void writeVTU_vp_wg_name(double hx, double Nx, double hz, double Nz, VectorXd data, std::string name) //with ghost
+    {
+        // his data
+        std::vector<double> points = {
+            1., 1., -1.,
+            1., -1., 1.,
+            -1., -1., 0.};
+        std::vector<int> elements = {0, 1, 2};
+        std::vector<double> scalar_field = {0., 1., 2.};
+        std::vector<double> vector_field = points;
+
+        const int dim = 3;
+        const int cell_size = 4;
+        std::string filename = name; //"rs2D.vtu";
         leanvtk::VTUWriter writer;
 
         // my data

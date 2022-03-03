@@ -94,6 +94,8 @@ int main(int argc, char **argv)
 				std::cout << "RE: " << re << " nx: " << nx << " nz: " << nz << " nnewt: " << nnewt << " nconti: " << nconti <<" lx: "<<lx <<" lz: "<<lz<<std::endl;
 
 			rs2Dfv::rs2D(re, nx, nz, nnewt, nconti, lx,lz);
+			// problem jest taki ze Dirichlet bc na pressure powoduje osculacje w jeg rejonie i rozwiazanie rozpada sie dla dostatecznie wysokich re, 100x100 to juz dla re 30 jest kicha
+			// kod laurenta w tym czasie szczesliwe zbiega sie w osmiu iteracjach z krokiem re=10 do re=00
 		}
 	}
 	return 0;
